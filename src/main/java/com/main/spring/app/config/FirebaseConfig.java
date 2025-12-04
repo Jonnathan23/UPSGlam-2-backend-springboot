@@ -15,7 +15,7 @@ public class FirebaseConfig {
     // 1. Bean para inicializar la aplicación de Firebase
     @Bean
     public FirebaseApp firebaseApp() throws IOException {
-        ClassPathResource resource = new ClassPathResource("serviceAccountKey.json");
+        ClassPathResource resource = new ClassPathResource("envs/serviceAccountKey.json");
 
         // Construir opciones con las credenciales
         FirebaseOptions options = FirebaseOptions.builder()
