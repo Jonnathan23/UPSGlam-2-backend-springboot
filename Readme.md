@@ -42,6 +42,23 @@ Para que la aplicación se conecte a Firebase, necesitas el archivo de credencia
 
 ---
 
+---
+
+## ⚙️ Descarga e Instalación de Dependencias
+
+Antes de arrancar la aplicación, debes instalar las dependencias definidas en el `pom.xml`.
+
+### 1. Instalar Dependencias
+
+Desde la raíz del proyecto, ejecuta el siguiente comando:
+
+```bash
+.\mvnw install
+
+```
+
+---
+
 ## 🏃 Arrancar la Aplicación
 
 Existen dos formas principales de ejecutar la aplicación Spring Boot:

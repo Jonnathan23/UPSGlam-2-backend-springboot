@@ -1,4 +1,4 @@
-package com.main.spring.app.model;
+package com.main.spring.app.model.auth;
 
 import lombok.Data;
 import jakarta.validation.constraints.Email;
