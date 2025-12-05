@@ -1,6 +1,7 @@
 package com.main.spring.app.repository;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 import com.main.spring.app.interfaces.auth.AuthRepository;
 import com.main.spring.app.model.auth.LoginRequest;
@@ -22,15 +23,41 @@ public class AuthRepositoryImpl implements AuthRepository {
     public Mono<String> registerUser(RegisterRequest request) {
 
         return Mono.fromCallable(() -> {
-            UserRecord.CreateRequest createRequest = new UserRecord.CreateRequest()
-                    .setEmail(request.getEmail())
-                    .setPassword(request.getPassword())
-                    .setDisplayName(request.getEmail().split("@")[0]); // Usar parte del email como nombre
+            try {
+                UserRecord.CreateRequest createRequest = new UserRecord.CreateRequest()
+                        .setEmail(request.getEmail())
+                        .setPassword(request.getPassword())
+                        .setDisplayName(request.getEmail().split("@")[0]); // Usar parte del email como nombre
 
-            UserRecord userRecord = firebaseAuth.createUser(createRequest);
+                UserRecord userRecord = firebaseAuth.createUser(createRequest);
 
-            // Retorna la UID de Firebase como el identificador de la cuenta
-            return userRecord.getUid();
+                // Retorna la UID de Firebase como el identificador de la cuenta
+                return userRecord.getUid();
+            } catch (FirebaseAuthException e) {
+                // Log para debugging
+                System.out.println("FirebaseAuthException capturada - ErrorCode: " + e.getErrorCode());
+                System.out.println("FirebaseAuthException - Mensaje: " + e.getMessage());
+                
+                // Capturar excepción específica de Firebase cuando el email ya existe
+                // getErrorCode() retorna un enum, lo convertimos a String para comparar
+                // Firebase usa ALREADY_EXISTS cuando el email ya existe
+                String errorCodeStr = e.getErrorCode() != null ? e.getErrorCode().name() : null;
+                if (errorCodeStr != null && (errorCodeStr.equals("ALREADY_EXISTS") || 
+                    errorCodeStr.equals("EMAIL_EXISTS"))) {
+                    throw new RuntimeException("EMAIL_ALREADY_EXISTS");
+                }
+                // Re-lanzar otras excepciones de Firebase
+                throw new RuntimeException("Error de Firebase: " + e.getMessage(), e);
+            } catch (Exception e) {
+                // Capturar cualquier otra excepción y loggear
+                System.out.println("Excepción general en registerUser: " + e.getClass().getName());
+                System.out.println("Mensaje: " + e.getMessage());
+                if (e.getCause() != null) {
+                    System.out.println("Causa: " + e.getCause().getClass().getName());
+                    System.out.println("Causa mensaje: " + e.getCause().getMessage());
+                }
+                throw e;
+            }
         });
     }
 
