@@ -33,3 +33,8 @@ envs
 
 ### VS Code ###
 .vscode/
+
+## Others
+UPSGlam_Backend.postman_collection.json
+GUIA_FASTAPI_A_SPRING.md
+POSTMAN_GUIDE.md
