@@ -29,13 +29,13 @@ public class AuthControllerImpl {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<String> registerUser(@Valid @RequestBody RegisterRequest request) {
 
-        System.out.println("Petición de registro recibida para: " + request.getEmail());
+        // System.out.println("Petición de registro recibida para: " + request.getEmail());
 
         return authService.registerUser(request)
                 .onErrorResume(e -> {
                     // Log para debugging
-                    System.out.println("Error en controller - Tipo: " + e.getClass().getName());
-                    System.out.println("Error en controller - Mensaje: " + e.getMessage());
+                    // System.out.println("Error en controller - Tipo: " + e.getClass().getName());
+                    // System.out.println("Error en controller - Mensaje: " + e.getMessage());
                     
                     // Verificar el mensaje directo
                     String message = e.getMessage();
@@ -48,8 +48,8 @@ public class AuthControllerImpl {
                     Throwable cause = e.getCause();
                     if (cause != null) {
                         String causeMessage = cause.getMessage();
-                        System.out.println("Causa del error - Tipo: " + cause.getClass().getName());
-                        System.out.println("Causa del error - Mensaje: " + causeMessage);
+                        // System.out.println("Causa del error - Tipo: " + cause.getClass().getName());
+                        // System.out.println("Causa del error - Mensaje: " + causeMessage);
                         
                         if (causeMessage != null && causeMessage.contains("EMAIL_ALREADY_EXISTS")) {
                             return Mono.error(
@@ -79,7 +79,7 @@ public class AuthControllerImpl {
 
     @PostMapping("/login")
     public Mono<String> loginUser(@Valid @RequestBody LoginRequest request) {
-        System.out.println("Petición de login recibida para: " + request.getEmail());
+        // System.out.println("Petición de login recibida para: " + request.getEmail());
 
         return authService.loginUser(request)
                 .onErrorResume(e -> {

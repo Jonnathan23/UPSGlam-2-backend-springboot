@@ -35,8 +35,8 @@ public class AuthRepositoryImpl implements AuthRepository {
                 return userRecord.getUid();
             } catch (FirebaseAuthException e) {
                 // Log para debugging
-                System.out.println("FirebaseAuthException capturada - ErrorCode: " + e.getErrorCode());
-                System.out.println("FirebaseAuthException - Mensaje: " + e.getMessage());
+                // System.out.println("FirebaseAuthException capturada - ErrorCode: " + e.getErrorCode());
+                // System.out.println("FirebaseAuthException - Mensaje: " + e.getMessage());
                 
                 // Capturar excepción específica de Firebase cuando el email ya existe
                 // getErrorCode() retorna un enum, lo convertimos a String para comparar
@@ -50,11 +50,11 @@ public class AuthRepositoryImpl implements AuthRepository {
                 throw new RuntimeException("Error de Firebase: " + e.getMessage(), e);
             } catch (Exception e) {
                 // Capturar cualquier otra excepción y loggear
-                System.out.println("Excepción general en registerUser: " + e.getClass().getName());
-                System.out.println("Mensaje: " + e.getMessage());
+                // System.out.println("Excepción general en registerUser: " + e.getClass().getName());
+                // System.out.println("Mensaje: " + e.getMessage());
                 if (e.getCause() != null) {
-                    System.out.println("Causa: " + e.getCause().getClass().getName());
-                    System.out.println("Causa mensaje: " + e.getCause().getMessage());
+                    // System.out.println("Causa: " + e.getCause().getClass().getName());
+                    // System.out.println("Causa mensaje: " + e.getCause().getMessage());
                 }
                 throw e;
             }
