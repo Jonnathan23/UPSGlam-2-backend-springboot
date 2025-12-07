@@ -1,12 +1,15 @@
 package com.main.spring.app.config;
 
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.Firestore;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import com.google.firebase.cloud.FirestoreClient; // 👈 NECESARIO
+import com.google.cloud.firestore.Firestore;
 import java.io.IOException;
 
 @Configuration
@@ -35,6 +38,12 @@ public class FirebaseConfig {
     public FirebaseAuth firebaseAuth(FirebaseApp firebaseApp) {
         // Spring inyecta automáticamente el FirebaseApp del bean anterior
         return FirebaseAuth.getInstance(firebaseApp);
+    }
+
+    @Bean
+    public Firestore firestoreDb(FirebaseApp firebaseApp) {
+        // Spring inyecta el FirebaseApp y luego inicializamos el cliente de Firestore.
+        return FirestoreClient.getFirestore(firebaseApp);
     }
 
 }
