@@ -28,10 +28,30 @@ public class FirebaseAuthenticationManager implements ReactiveAuthenticationMana
         })
                 .map(decodedToken -> {
                     String uid = decodedToken.getUid();
+                    String name = decodedToken.getName(); // Extract name
                     // Aquí podrías extraer roles si los tienes en el token
                     List<SimpleGrantedAuthority> authorities = Collections
                             .singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-                    return new UsernamePasswordAuthenticationToken(uid, null, authorities);
+                    // Use a custom principal or just pass the name as the principal if that's what
+                    // we want,
+                    // but usually principal is the ID. Let's pass a custom object or just the name
+                    // if the ID isn't strictly needed there,
+                    // OR better: keep UID as principal and add name to details?
+                    // Actually, let's create a simple User object or just pass the name if the user
+                    // only cares about the name.
+                    // For now, let's pass a Map or custom object as the principal? No, Principal
+                    // should be the ID usually.
+                    // Let's pass the UID as principal, and we can't easily set details in reactive
+                    // auth manager this way without a custom token class.
+                    // Simplest approach: Pass a custom UserDetails-like object as the principal.
+
+                    // Let's just pass the name as the credentials or use a custom Authentication
+                    // implementation?
+                    // Standard: UsernamePasswordAuthenticationToken(principal, credentials,
+                    // authorities)
+                    // Principal = UID
+                    // Credentials = Name (hacky but works for this specific requirement)
+                    return new UsernamePasswordAuthenticationToken(uid, name, authorities);
                 });
     }
 }
