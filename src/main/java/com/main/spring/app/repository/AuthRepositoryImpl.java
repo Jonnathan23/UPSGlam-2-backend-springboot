@@ -1,15 +1,19 @@
 package com.main.spring.app.repository;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.UserRecord;
+import com.main.spring.app.dto.FirebaseTokenResponse;
 import com.main.spring.app.interfaces.auth.AuthRepository;
-import com.main.spring.app.model.auth.LoginRequest;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.main.spring.app.model.auth.RegisterRequest;
+import com.main.spring.app.model.auth.LoginRequest;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.UserRecord;
 
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.http.MediaType;
+
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
@@ -19,13 +23,14 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     private final FirebaseAuth firebaseAuth;
     private final WebClient webClient;
+    private final String firebaseApiKey;
 
-    @Value("${firebase.api.key}")
-    private String firebaseApiKey;
-
-    public AuthRepositoryImpl(FirebaseAuth firebaseAuth, WebClient.Builder webClientBuilder) {
+    public AuthRepositoryImpl(FirebaseAuth firebaseAuth,
+            @Qualifier("firebaseAuthWebClient") WebClient firebaseAuthWebClient,
+            @Value("${firebase.api.key}") String firebaseApiKey) {
         this.firebaseAuth = firebaseAuth;
-        this.webClient = webClientBuilder.build();
+        this.webClient = firebaseAuthWebClient;
+        this.firebaseApiKey = firebaseApiKey;
     }
 
     @Override
@@ -74,33 +79,52 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     @Override
     public Mono<String> loginUser(LoginRequest request) {
-        return Mono.fromCallable(() -> {
-            try {
-                UserRecord user = firebaseAuth.getUserByEmail(request.getEmail());
-                return firebaseAuth.createCustomToken(user.getUid());
-            } catch (Exception e) {
-                throw new RuntimeException("Credenciales inválidas o usuario no existe.");
-            }
-        }).flatMap(customToken -> exchangeCustomTokenForIdToken(customToken));
-    }
 
-    private Mono<String> exchangeCustomTokenForIdToken(String customToken) {
-        String url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=" + firebaseApiKey;
+        Map<String, String> body = Map.of(
+                "email", request.getEmail(),
+                "password", request.getPassword(),
+                "returnSecureToken", "true");
 
         return webClient.post()
-                .uri(url)
-                .bodyValue(Map.of("token", customToken, "returnSecureToken", true))
+                .uri(uriBuilder -> uriBuilder
+                        // Endpoint correcto: accounts:signInWithPassword
+                        .path("/accounts:signInWithPassword")
+                        .queryParam("key", firebaseApiKey)
+                        .build())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
                 .retrieve()
-                .bodyToMono(Map.class)
-                .map(response -> (String) response.get("idToken"))
-                .onErrorMap(e -> new RuntimeException("Error al intercambiar token: " + e.getMessage()));
+
+                .onStatus(s -> s.is4xxClientError(), response ->
+                // El error 4xx indica credenciales incorrectas.
+                Mono.error(new RuntimeException("CREDENCIALES_INVALIDAS")))
+
+                // 4. Deserializamos la respuesta exitosa usando la clase pública
+                .bodyToMono(FirebaseTokenResponse.class)
+                // 5. Mapeamos para devolver solo el ID Token
+                .map(response -> response.getIdToken());
     }
 
+    /**
+     * Verifica la validez de un Token JWT usando el Admin SDK (para Spring
+     * Security).
+     * 
+     * @param token ID Token JWT de Firebase.
+     * @return Mono<String> que contiene el UID.
+     */
     @Override
     public Mono<String> getUidFromToken(String token) {
-        // Necesario para el flujo de seguridad, pero dejaremos el cuerpo vacío por
-        // ahora.
-        throw new UnsupportedOperationException("Unimplemented method 'getUidFromToken'");
+        // Envolvemos la llamada bloqueante en un Mono (crucial para WebFlux)
+        return Mono.fromCallable(() -> {
+            try {
+                // El Admin SDK verifica la firma del token con Google
+                return firebaseAuth.verifyIdToken(token).getUid();
+            } catch (FirebaseAuthException e) {
+                // Lanza error si el token expiró o es inválido
+                throw new org.springframework.security.authentication.BadCredentialsException(
+                        "Token inválido o expirado");
+            }
+        });
     }
 
 }

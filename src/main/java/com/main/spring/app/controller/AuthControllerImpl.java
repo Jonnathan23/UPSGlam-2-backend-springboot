@@ -29,45 +29,47 @@ public class AuthControllerImpl {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<String> registerUser(@Valid @RequestBody RegisterRequest request) {
 
-        // System.out.println("Petición de registro recibida para: " + request.getEmail());
+        // System.out.println("Petición de registro recibida para: " +
+        // request.getEmail());
 
         return authService.registerUser(request)
                 .onErrorResume(e -> {
                     // Log para debugging
                     // System.out.println("Error en controller - Tipo: " + e.getClass().getName());
                     // System.out.println("Error en controller - Mensaje: " + e.getMessage());
-                    
+
                     // Verificar el mensaje directo
                     String message = e.getMessage();
                     if (message != null && message.contains("EMAIL_ALREADY_EXISTS")) {
                         return Mono.error(
                                 new ResponseStatusException(HttpStatus.CONFLICT, "Email ya registrado en Firebase."));
                     }
-                    
+
                     // Verificar la causa (puede estar envuelta)
                     Throwable cause = e.getCause();
                     if (cause != null) {
                         String causeMessage = cause.getMessage();
                         // System.out.println("Causa del error - Tipo: " + cause.getClass().getName());
                         // System.out.println("Causa del error - Mensaje: " + causeMessage);
-                        
+
                         if (causeMessage != null && causeMessage.contains("EMAIL_ALREADY_EXISTS")) {
                             return Mono.error(
-                                    new ResponseStatusException(HttpStatus.CONFLICT, "Email ya registrado en Firebase."));
+                                    new ResponseStatusException(HttpStatus.CONFLICT,
+                                            "Email ya registrado en Firebase."));
                         }
-                        
+
                         // Verificar si es FirebaseAuthException
                         if (cause instanceof com.google.firebase.auth.FirebaseAuthException) {
-                            com.google.firebase.auth.FirebaseAuthException firebaseEx = 
-                                (com.google.firebase.auth.FirebaseAuthException) cause;
+                            com.google.firebase.auth.FirebaseAuthException firebaseEx = (com.google.firebase.auth.FirebaseAuthException) cause;
                             // getErrorCode() retorna un enum, lo convertimos a String
                             // Firebase usa ALREADY_EXISTS cuando el email ya existe
-                            String errorCodeStr = firebaseEx.getErrorCode() != null ? 
-                                firebaseEx.getErrorCode().name() : null;
-                            if (errorCodeStr != null && (errorCodeStr.equals("ALREADY_EXISTS") || 
-                                errorCodeStr.equals("EMAIL_EXISTS"))) {
+                            String errorCodeStr = firebaseEx.getErrorCode() != null ? firebaseEx.getErrorCode().name()
+                                    : null;
+                            if (errorCodeStr != null && (errorCodeStr.equals("ALREADY_EXISTS") ||
+                                    errorCodeStr.equals("EMAIL_EXISTS"))) {
                                 return Mono.error(
-                                        new ResponseStatusException(HttpStatus.CONFLICT, "Email ya registrado en Firebase."));
+                                        new ResponseStatusException(HttpStatus.CONFLICT,
+                                                "Email ya registrado en Firebase."));
                             }
                         }
                     }
@@ -78,19 +80,27 @@ public class AuthControllerImpl {
     }
 
     @PostMapping("/login")
+    // 👈 1. Recibe el DTO y activa la validación
     public Mono<String> loginUser(@Valid @RequestBody LoginRequest request) {
-        // System.out.println("Petición de login recibida para: " + request.getEmail());
 
+        System.out.println("Petición de login recibida para: " + request.getEmail());
+
+        // 2. Delega al Servicio
         return authService.loginUser(request)
                 .onErrorResume(e -> {
-                    // Captura el error de credenciales inválidas que lanza el Repository
-                    if (e.getMessage().contains("Credenciales inválidas")) {
+                    String message = e.getMessage();
+
+                    // Si el error es una credencial inválida O un fallo de URL (4xx), mapeamos a
+                    // 401
+                    if (message != null && message.contains("CREDENCIALES_INVALIDAS")) {
                         return Mono
                                 .error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas."));
                     }
-                    // Manejo de errores genéricos (500)
-                    return Mono.error(
-                            new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al procesar login."));
+
+                    // Si el error es un fallo de WebClient o un 500
+                    System.err.println("Error al contactar servicio o interno: " + message); // 👈 Log de debug
+                    return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Error interno del servidor al procesar login."));
                 });
     }
 }

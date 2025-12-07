@@ -27,9 +27,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Mono<String> loginUser(LoginRequest request) {
-        // Lógica de negocio: simplemente llama al repositorio para obtener el token
+        // 1. Llama al repositorio para verificar credenciales y obtener el token.
         return authRepository.loginUser(request)
-                .doOnSuccess(token -> System.out.println("LOG: Login exitoso. Token generado."))
+                .doOnSuccess(token -> System.out.println("LOG: Login exitoso. Token obtenido."))
                 .onErrorResume(e -> Mono.error(new RuntimeException("Error en login: " + e.getMessage())));
     }
 
