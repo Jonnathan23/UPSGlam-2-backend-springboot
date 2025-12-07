@@ -7,6 +7,7 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -14,7 +15,8 @@ public class ImageProcessingService {
 
     private final WebClient webClient;
 
-    public ImageProcessingService(WebClient webClient) {
+    public ImageProcessingService(
+            @Qualifier("fastApiWebClient") WebClient webClient) {
         this.webClient = webClient;
     }
 

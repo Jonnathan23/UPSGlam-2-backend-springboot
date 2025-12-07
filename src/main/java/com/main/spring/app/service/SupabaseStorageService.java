@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.UUID;
 
@@ -23,8 +24,9 @@ public class SupabaseStorageService {
     @Value("${supabase.bucket:}")
     private String supabaseBucket;
 
-    public SupabaseStorageService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.build();
+    public SupabaseStorageService(
+            @Qualifier("fastApiWebClient") WebClient webClient) {
+        this.webClient = webClient;
     }
 
     public Mono<String> uploadImage(byte[] imageBytes, String filename) {
