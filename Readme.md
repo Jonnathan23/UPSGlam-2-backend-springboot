@@ -2,71 +2,115 @@
 
 ## 📝 Descripción del Proyecto
 
-Este repositorio contiene el **Backend Reactivo** de la plataforma social UPSGlam 2.0, una aplicación tipo Instagram. El backend está desarrollado en **Java** utilizando **Spring WebFlux** para garantizar una arquitectura de microservicios sin bloqueo y escalable.
+Este repositorio contiene el **Backend Reactivo** de la plataforma social UPSGlam 2.0. Actúa como un **API Gateway** inteligente que orquesta la autenticación, el almacenamiento y el procesamiento de imágenes.
 
-[cite_start]El objetivo principal es gestionar las publicaciones, la autenticación de usuarios y servir como API Gateway para el procesamiento de imágenes por GPU (servicio externo). [cite: 3, 19]
+### 🚀 Arquitectura del Sistema
 
-### 🏗️ Tecnologías Clave
+El sistema sigue una arquitectura de microservicios moderna:
 
-* **Framework:** Spring Boot 3.x
-* [cite_start]**Modelo de Concurrencia:** Spring WebFlux (Reactivo y No-Bloqueante) [cite: 3, 19]
-* **Servidor:** Netty
-* **Lenguaje:** Java 17+
-* [cite_start]**Base de Datos & Auth:** Firebase Firestore y Firebase Authentication [cite: 20]
-* **Seguridad:** Spring Security (Validación de Tokens Firebase)
-
----
-
-## 🛠️ Requisitos Previos
-
-Asegúrate de tener instalado y configurado lo siguiente en tu entorno local:
-
-* **Java Development Kit (JDK):** Versión 17 o superior (LTS).
-* **Maven** (Opcional, el proyecto usa el wrapper `mvnw`).
-* **Postman** o cualquier cliente REST para probar los endpoints.
-* **IDE:** IntelliJ IDEA o VS Code con soporte para Spring/Java.
+1.  **Spring Boot (Este Repo):**
+    *   Gestiona la autenticación con **Firebase**.
+    *   Actúa como Gateway para el servicio de procesamiento.
+    *   Sube las imágenes procesadas a **Supabase Storage**.
+    *   Devuelve respuestas JSON estructuradas al cliente.
+2.  **FastAPI (VisionProcessingGPU-Kit):**
+    *   Microservicio externo en Python.
+    *   Procesa imágenes usando **GPU (CUDA)** y OpenCV.
+    *   Aplica filtros: Canny, Gaussian, Negative, Emboss, Watermark, Ripple, Collage.
+    *   [Repositorio GitHub](https://github.com/Juanja1306/VisionProcessingGPU-Kit)
+3.  **Firebase:**
+    *   **Auth:** Gestión de usuarios y tokens JWT.
+    *   **Firestore:** Persistencia de datos de usuario.
+4.  **Supabase:**
+    *   **Storage:** Almacenamiento de objetos para guardar las imágenes procesadas.
 
 ---
 
-## 🔥 Configuración de Firebase
+## 🛠️ Tecnologías Clave
 
-Para que la aplicación se conecte a Firebase, necesitas el archivo de credenciales del proyecto:
-
-1.  **Obtener credenciales:** Descarga el archivo `serviceAccountKey.json` desde la Consola de Firebase.
-2.  **Ubicación:** Crea la carpeta ``envs`` y coloca este archivo dentro del directorio de recursos del proyecto:
-    ```
-    src/main/resources/envs/serviceAccountKey.json
-    ```
-
-> ⚠️ **¡Seguridad Crítica!** Asegúrate de que este archivo **NO** se suba al repositorio de Git. El archivo `.gitignore` ya debe excluirlo, pero verifica que contenga la línea `serviceAccountKey.json`.
+*   **Framework:** Spring Boot 3.9
+*   **Modelo de Concurrencia:** Spring WebFlux 
+*   **Cliente HTTP:** WebClient 
+*   **Seguridad:** Spring Security + Firebase Admin SDK
+*   **Almacenamiento:** Supabase Storage API
+*   **Lenguaje:** Java 21
 
 ---
 
----
+## ⚙️ Configuración del Entorno
 
-## ⚙️ Descarga e Instalación de Dependencias
+### 1. Requisitos Previos
+*   Java 21 JDK
+*   Maven (o usar `./mvnw`)
+*   Servicio FastAPI corriendo en `http://localhost:8000`
 
-Antes de arrancar la aplicación, debes instalar las dependencias definidas en el `pom.xml`.
+### 2. Variables de Entorno (`application.properties`)
 
-### 1. Instalar Dependencias
+Crea o edita el archivo `src/main/resources/application.properties` con las siguientes claves:
 
-Desde la raíz del proyecto, ejecuta el siguiente comando:
-
-```bash
-.\mvnw install
-
+```properties
+spring.application.name=app
+fastapi.url=http://localhost:8000
+firebase.api.key=XXX
+supabase.url=XXX
+supabase.key=XXX
+supabase.bucket=XXX
 ```
 
+### 3. Credenciales de Firebase
+Coloca tu archivo `serviceAccountKey.json` en:
+`src/main/resources/envs/serviceAccountKey.json`
+
 ---
 
-## 🏃 Arrancar la Aplicación
+## 🔌 Endpoints de la API
 
-Existen dos formas principales de ejecutar la aplicación Spring Boot:
+Todos los endpoints de procesamiento requieren un **Token Bearer de Firebase** válido en el header `Authorization`.
 
-### 1. Desarrollo (Hot Swap)
+### 🔐 Autenticación
 
-Ejecuta el siguiente comando desde la raíz del proyecto para compilar y arrancar el servidor **Netty** en modo desarrollo:
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Registro de usuario (Email/Password) |
+| `POST` | `/api/auth/login` | Login de usuario (Devuelve Token) |
+
+### 🎨 Procesamiento de Imágenes
+
+Todos estos endpoints aceptan `multipart/form-data` con un archivo `file`. Devuelven un JSON con la URL de la imagen procesada.
+
+**Respuesta Exitosa (200 OK):**
+```json
+{
+    "userName": "Nombre del Usuario",
+    "imageUrl": "https://tu-proyecto.supabase.co/storage/v1/object/public/UPSGlam/uuid_imagen.png"
+}
+```
+
+| Filtro | Endpoint | Parámetros Opcionales (Form-Data) |
+| :--- | :--- | :--- |
+| **Canny** | `/api/process/canny` | `kernel_size`, `sigma`, `low_threshold`, `high_threshold`, `use_auto` |
+| **Gaussian** | `/api/process/gaussian` | `kernel_size`, `sigma`, `use_auto` |
+| **Negative** | `/api/process/negative` | *Ninguno* |
+| **Emboss** | `/api/process/emboss` | `kernel_size`, `bias_value`, `use_auto` |
+| **Watermark** | `/api/process/watermark` | `scale`, `transparency`, `spacing` |
+| **Ripple** | `/api/process/ripple` | `edge_threshold`, `color_levels`, `saturation` |
+| **Collage** | `/api/process/collage` | *Ninguno* |
+
+---
+
+## 🏃 Ejecución
 
 ```bash
 .\mvnw spring-boot:run
 ```
+
+---
+
+## 🐛 Solución de Problemas Comunes
+
+1.  **Error 400/403 en Supabase (Invalid Compact JWS):**
+    *   Asegúrate de usar la **Legacy API Key** (JWT que empieza por `ey...`), no el nuevo `sb_secret`.
+2.  **Error 404 (Bucket not found) al ver la imagen:**
+    *   Tu bucket en Supabase debe ser **PÚBLICO**. Ve a Storage -> Buckets -> Edit Bucket -> Public: ON.
+3.  **Error 500 en Procesamiento:**
+    *   Verifica que el servicio FastAPI esté corriendo en el puerto 8000.
