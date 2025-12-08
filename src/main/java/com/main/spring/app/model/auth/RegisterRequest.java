@@ -23,7 +23,6 @@ public class RegisterRequest {
     @NotBlank(message = "La contraseña de confirmación no puede estar vacía")
     private String usr_confirmPassword;
 
-    @NotBlank(message = "La URL de la foto no puede estar vacía")
     private String usr_photoUrl;
 
     private String usr_bio = "Hola, bienvenido a mi perfil";
@@ -34,6 +33,6 @@ public class RegisterRequest {
             return false;
         }
         return usr_password.equals(usr_confirmPassword);
-    }   
+    }
 
 }
