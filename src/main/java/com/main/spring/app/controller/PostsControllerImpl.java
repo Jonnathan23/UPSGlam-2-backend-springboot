@@ -25,12 +25,12 @@ public class PostsControllerImpl {
         this.postService = postService;
     }
 
-    @PostMapping(consumes = { "multipart/form-data" }) // 
+    @PostMapping(consumes = { "multipart/form-data" }) // HABILITA FormData
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<String> createPost(
-            @RequestPart("pos_image") Mono<FilePart> filePartMono, // 
-            @RequestPart("pos_caption") String caption, // 
-            Authentication authentication // 
+            @RequestPart("pos_image") Mono<FilePart> filePartMono, // Archivo
+            @RequestPart("pos_caption") String caption, // Texto
+            Authentication authentication // JWT validado
     ) {
         // 1. EXTRAER UID del JWT (que Spring Security ya verificó)
         // El principal es el UID que devolvimos en el FirebaseAuthenticationManager

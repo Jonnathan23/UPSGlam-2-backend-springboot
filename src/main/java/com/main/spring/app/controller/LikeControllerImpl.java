@@ -26,7 +26,7 @@ public class LikeControllerImpl {
     ) {
         String authorUid = (String) authentication.getPrincipal();
 
-        return likeService.createLike(postId, authorUid) // 👈 Llamada al servicio
+        return likeService.createLike(postId, authorUid) // Llamada al servicio
                 .onErrorResume(e -> {
                     String message = e.getMessage();
 
