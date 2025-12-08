@@ -96,4 +96,32 @@ public class PostRepositoryImpl implements PostRepository {
         }).then(); // Convertir el resultado a Mono<Void>
     }
 
+    @Override
+    public Mono<Void> updateCommentCount(String postId, int increment) {
+
+        return Mono.fromCallable(() -> {
+
+            // 1. Obtener la referencia al documento Post principal
+            DocumentReference postRef = firestoreDb.collection("Posts")
+                    .document(Objects.requireNonNull(postId, "postId no puede ser null"));
+
+            // 2. Crear un mapa para la actualización atómica
+            Map<String, Object> update = Objects.requireNonNull(
+                    Collections.singletonMap(
+                            "pos_commentsCount",
+                            FieldValue.increment(increment) // Incrementar el valor en la DB
+            ), "update map no puede ser null");
+
+            // 3. Ejecutar la actualización (Bloqueante)
+            postRef.update(update).get();
+
+            return null; // Devolvemos Mono<Void>
+
+        }).onErrorResume(e -> {
+            System.err.println("ERROR FIRESTORE: Fallo al actualizar contador de Comentarios para post " + postId
+                    + ". Causa: " + e.getMessage());
+            return Mono.error(new RuntimeException("FIRESTORE_COMMENT_COUNT_UPDATE_FAILED"));
+        }).then(); // Convertir el resultado a Mono<Void>
+    }
+
 }
