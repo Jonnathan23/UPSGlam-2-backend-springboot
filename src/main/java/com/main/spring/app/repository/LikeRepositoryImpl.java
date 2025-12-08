@@ -1,0 +1,55 @@
+package com.main.spring.app.repository;
+
+import java.util.Objects;
+
+import org.springframework.stereotype.Repository;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.Firestore;
+import com.main.spring.app.interfaces.likes.LikeRepository;
+import com.main.spring.app.schema.LikeSchema;
+
+import reactor.core.publisher.Mono;
+
+@Repository
+public class LikeRepositoryImpl implements LikeRepository {
+
+    private final Firestore firestoreDb;
+
+    public LikeRepositoryImpl(Firestore firestoreDb) {
+        this.firestoreDb = firestoreDb;
+    }
+
+    @Override
+    public Mono<String> createLike(String postId, String authorUid) {
+
+        return Mono.fromCallable(() -> {
+
+            DocumentReference likeRef = firestoreDb.collection("Posts")
+                    .document(Objects.requireNonNull(postId, "postId no puede ser null"))
+                    .collection("Likes")
+                    .document(Objects.requireNonNull(authorUid, "authorUid no puede ser null"));
+
+            boolean exists = likeRef.get().get().exists();
+            if (exists) {
+                likeRef.delete().get();
+                return "Like eliminado exitosamente";
+            }
+
+            LikeSchema likeData = new LikeSchema(
+                    authorUid,
+                    postId);
+
+            // GUARDAR EL OBJETO POJO COMPLETO EN FIRESTORE
+            likeRef.set(likeData).get();
+
+            return "Like creado exitosamente";
+
+        }).onErrorMap(e -> {
+            if (e instanceof RuntimeException && "ALREADY_LIKED".equals(e.getMessage())) {
+                return e;
+            }
+            System.err.println("Error de Firestore al crear like: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_LIKE_FAILED", e);
+        });
+    }
+}

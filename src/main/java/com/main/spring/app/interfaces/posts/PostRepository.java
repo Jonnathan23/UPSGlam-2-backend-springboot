@@ -1,0 +1,11 @@
+package com.main.spring.app.interfaces.posts;
+
+import org.springframework.http.codec.multipart.FilePart;
+
+import reactor.core.publisher.Mono;
+
+public interface PostRepository {
+    Mono<String> createPost(FilePart filePart, String caption, String authorUid);
+    Mono<Void> updateLikeCount(String postId, int increment);
+    Mono<Void> updateCommentCount(String postId, int increment);
+}
