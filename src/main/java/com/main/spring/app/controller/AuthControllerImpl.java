@@ -80,6 +80,20 @@ public class AuthControllerImpl {
                                 .error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas."));
                     }
 
+                    // Errores de conexión con Firebase
+                    if (message != null && message.contains("ERROR_CONEXION_FIREBASE")) {
+                        System.err.println("Error de conexión con Firebase: " + message);
+                        return Mono.error(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                                "No se puede conectar con el servicio de autenticación. Verifica tu conexión a internet."));
+                    }
+
+                    // Errores de timeout
+                    if (message != null && message.contains("ERROR_TIMEOUT_FIREBASE")) {
+                        System.err.println("Timeout al conectar con Firebase: " + message);
+                        return Mono.error(new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT,
+                                "El servicio de autenticación no respondió a tiempo. Intenta nuevamente."));
+                    }
+
                     // Si el error es un fallo de WebClient o un 500
                     System.err.println("Error al contactar servicio o interno: " + message); // Log de debug
                     return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,

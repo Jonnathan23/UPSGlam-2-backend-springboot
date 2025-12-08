@@ -104,7 +104,27 @@ public class AuthRepositoryImpl implements AuthRepository {
 
                 .bodyToMono(FirebaseTokenResponse.class)
 
-                .map(response -> response.getIdToken());
+                .map(response -> response.getIdToken())
+                
+                // Manejo de errores de conexión/DNS
+                .onErrorResume(e -> {
+                    String errorMessage = e.getMessage();
+                    if (errorMessage != null) {
+                        // Error de DNS o conexión
+                        if (errorMessage.contains("Failed to resolve") || 
+                            errorMessage.contains("Name resolution") ||
+                            errorMessage.contains("Connection refused") ||
+                            errorMessage.contains("Network is unreachable")) {
+                            throw new RuntimeException("ERROR_CONEXION_FIREBASE: No se puede conectar con Firebase. Verifica tu conexión a internet.");
+                        }
+                        // Error de timeout
+                        if (errorMessage.contains("timeout") || errorMessage.contains("Timeout")) {
+                            throw new RuntimeException("ERROR_TIMEOUT_FIREBASE: La conexión con Firebase tardó demasiado. Intenta nuevamente.");
+                        }
+                    }
+                    // Re-lanzar otros errores
+                    throw new RuntimeException("ERROR_FIREBASE: " + errorMessage, e);
+                });
     }
 
     /**
