@@ -6,4 +6,5 @@ import reactor.core.publisher.Mono;
 
 public interface PostRepository {
     Mono<String> createPost(FilePart filePart, String caption, String authorUid);
+    Mono<Void> updateLikeCount(String postId, int increment);
 }

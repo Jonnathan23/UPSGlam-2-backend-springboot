@@ -1,5 +1,8 @@
 package com.main.spring.app.repository;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.springframework.http.codec.multipart.FilePart;
 
 import com.google.cloud.firestore.Firestore;
@@ -7,10 +10,12 @@ import com.main.spring.app.interfaces.posts.PostRepository;
 import com.main.spring.app.schema.PostsSchema;
 
 import com.google.cloud.firestore.DocumentReference; // Necesario
+import com.google.cloud.firestore.FieldValue;
 
 import reactor.core.publisher.Mono;
 
 import org.springframework.stereotype.Repository;
+import java.util.Objects;
 
 @Repository
 public class PostRepositoryImpl implements PostRepository {
@@ -60,6 +65,35 @@ public class PostRepositoryImpl implements PostRepository {
     private String saveImageInBucket(FilePart filePart) {
         // TODO: guardar la imagen en el bucket
         return "http://..";
+    }
+
+    @Override
+    public Mono<Void> updateLikeCount(String postId, int increment) {
+
+        return Mono.fromCallable(() -> {
+
+            // 1. Obtener la referencia al documento Post principal
+            DocumentReference postRef = firestoreDb.collection("Posts")
+                    .document(Objects.requireNonNull(postId, "postId no puede ser null"));
+
+            // 2. Crear un mapa para la actualización atómica
+            Map<String, Object> update = Objects.requireNonNull(
+                    Collections.singletonMap(
+                            "pos_likesCount",
+                            FieldValue.increment(increment) // Incrementar el valor en la DB
+            ), "update map no puede ser null");
+
+            // 3. Ejecutar la actualización (Bloqueante)
+            postRef.update(update).get();
+
+            return null; // Devolvemos Mono<Void>
+
+        }).onErrorResume(e -> {
+            System.err.println("ERROR FIRESTORE: Fallo al actualizar contador de Likes para post " + postId
+                    + ". Causa: " + e.getMessage());
+            // Devolvemos Mono.empty() o un error si la falla es crítica
+            return Mono.error(new RuntimeException("FIRESTORE_UPDATE_FAILED"));
+        }).then(); // Convertir el resultado a Mono<Void>
     }
 
 }
