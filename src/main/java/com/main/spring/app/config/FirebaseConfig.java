@@ -8,8 +8,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import com.google.firebase.cloud.FirestoreClient; // 👈 NECESARIO
-
+import com.google.firebase.cloud.FirestoreClient;
 import java.io.IOException;
 
 @Configuration

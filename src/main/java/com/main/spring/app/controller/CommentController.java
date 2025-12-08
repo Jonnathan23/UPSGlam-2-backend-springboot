@@ -26,11 +26,11 @@ public class CommentController {
         this.commentsService = commentsService;
     }
 
-    @PostMapping("/{postId}/comments") // 👈 Endpoint para Comentar
+    @PostMapping("/{postId}/comments") // Endpoint para Comentar
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<String> createComment(
             @PathVariable String postId,
-            @Valid @RequestBody CommentRequest request, // 👈 Recibe el body {"com_text": "string"}
+            @Valid @RequestBody CommentRequest request, // Recibe el body {"com_text": "string"}
             Authentication authentication // JWT validado
     ) {
         // 1. Extraer UID del autor del JWT
@@ -46,6 +46,4 @@ public class CommentController {
                 });
     }
 
-
-    
 }

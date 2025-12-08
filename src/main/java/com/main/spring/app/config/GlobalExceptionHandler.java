@@ -21,6 +21,38 @@ public class GlobalExceptionHandler {
 
     private String defaultErrorMessage = "Ocurrió un error inesperado";
 
+    @ExceptionHandler(org.springframework.web.reactive.function.client.WebClientRequestException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleWebClientRequestException(
+            org.springframework.web.reactive.function.client.WebClientRequestException ex) {
+        if (isConnectionRefused(ex)) {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                    .message("Servidor FastAPI No prendido o conectado")
+                    .error("Service Unavailable")
+                    .status(HttpStatus.SERVICE_UNAVAILABLE.value())
+                    .details(null)
+                    .build();
+            return Mono.just(new ResponseEntity<>(errorResponse, HttpStatus.SERVICE_UNAVAILABLE));
+        }
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .message("Error de comunicación con el servicio de procesamiento de imágenes.")
+                .error("Internal Server Error")
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .details(null)
+                .build();
+        return Mono.just(new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR));
+    }
+
+    private boolean isConnectionRefused(Throwable ex) {
+        if (ex == null)
+            return false;
+        if (ex instanceof java.net.ConnectException)
+            return true;
+        if (ex.getMessage() != null && ex.getMessage().contains("Connection refused"))
+            return true;
+        return isConnectionRefused(ex.getCause());
+    }
+
     // 1. Maneja ResponseStatusException (errores específicos del controller)
     @ExceptionHandler(ResponseStatusException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleResponseStatusException(ResponseStatusException ex) {

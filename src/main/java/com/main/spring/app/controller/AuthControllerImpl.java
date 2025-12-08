@@ -81,7 +81,7 @@ public class AuthControllerImpl {
                     }
 
                     // Si el error es un fallo de WebClient o un 500
-                    System.err.println("Error al contactar servicio o interno: " + message); // 👈 Log de debug
+                    System.err.println("Error al contactar servicio o interno: " + message); // Log de debug
                     return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                             "Error interno del servidor al procesar login."));
                 });

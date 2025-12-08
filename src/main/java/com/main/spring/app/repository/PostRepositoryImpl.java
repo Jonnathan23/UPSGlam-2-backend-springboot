@@ -1,5 +1,8 @@
 package com.main.spring.app.repository;
 
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+
 import java.util.Collections;
 import java.util.Map;
 
@@ -8,6 +11,7 @@ import org.springframework.http.codec.multipart.FilePart;
 import com.google.cloud.firestore.Firestore;
 import com.main.spring.app.interfaces.posts.PostRepository;
 import com.main.spring.app.schema.PostsSchema;
+import com.main.spring.app.service.SupabaseStorageService;
 
 import com.google.cloud.firestore.DocumentReference; // Necesario
 import com.google.cloud.firestore.FieldValue;
@@ -17,27 +21,37 @@ import reactor.core.publisher.Mono;
 import org.springframework.stereotype.Repository;
 import java.util.Objects;
 
+import java.nio.ByteBuffer;
+
 @Repository
 public class PostRepositoryImpl implements PostRepository {
 
     private final Firestore firestoreDb;
+    private final SupabaseStorageService supabaseStorageService;
 
-    public PostRepositoryImpl(Firestore firestoreDb) {
+    public PostRepositoryImpl(Firestore firestoreDb, SupabaseStorageService supabaseStorageService) {
         this.firestoreDb = firestoreDb;
+        this.supabaseStorageService = supabaseStorageService;
     }
 
     @Override
     public Mono<String> createPost(FilePart filePart, String caption, String authorUid) {
 
-        // 1. Ejecutar el código bloqueante (guardar imagen) dentro de un
-        // Mono.fromCallable
-        // Esto devuelve un Mono<String> que contiene la URL de la imagen.
-        Mono<String> imageUrlMono = Mono.fromCallable(() -> {
-            // 🚨 Esta es la llamada bloqueante al método delegado 🚨
-            return saveImageInBucket(filePart);
-        });
+         // 1. Convertir FilePart a byte[] de forma reactiva
+        Mono<byte[]> imageBytesMono = DataBufferUtils.join(filePart.content())
+                .map(dataBuffer -> {
+                    ByteBuffer byteBuffer = dataBuffer.asByteBuffer();
+                    byte[] bytes = new byte[byteBuffer.remaining()];
+                    byteBuffer.get(bytes);
+                    DataBufferUtils.release(dataBuffer);
+                    return bytes;
+                });
 
-        // 2. Encadenar la URL obtenida para crear el PostSchema y guardarlo en
+        // 2. Subir la imagen al bucket y obtener la URL
+        Mono<String> imageUrlMono = imageBytesMono
+                .flatMap(bytes -> saveImageInBucket(bytes, filePart.filename()));
+
+        // 3. Encadenar la URL obtenida para crear el PostSchema y guardarlo en
         // Firestore
         return imageUrlMono.flatMap(imageUrl -> Mono.fromCallable(() -> {
 
@@ -47,24 +61,23 @@ public class PostRepositoryImpl implements PostRepository {
                     imageUrl, // URL obtenida del bucket
                     caption);
 
-            // 3. Obtener la referencia a la colección 'posts'
+            // 4. Obtener la referencia a la colección 'posts'
             // NOTA: Firestore no necesita que incluyas timestamp en el constructor si
             // usamos Timestamp.now() en el Schema
             DocumentReference docRef = firestoreDb.collection("Posts").document();
 
-            // 4. Guardar el objeto POJO (Bloqueante)
+            // 5. Guardar el objeto POJO (Bloqueante)
             // .set() guarda el objeto, y .get() hace que la operación sea síncrona
             docRef.set(newPost).get();
 
-            // 5. Retornar el ID del documento recién creado
+            // 6. Retornar el ID del documento recién creado
             return docRef.getId();
 
         }));
     }
 
-    private String saveImageInBucket(FilePart filePart) {
-        // TODO: guardar la imagen en el bucket
-        return "http://..";
+    public Mono<String> saveImageInBucket(byte[] imageBytes, String filename) {
+        return supabaseStorageService.uploadImage(imageBytes, filename);
     }
 
     @Override
