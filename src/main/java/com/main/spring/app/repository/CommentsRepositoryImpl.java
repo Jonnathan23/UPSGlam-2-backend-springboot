@@ -44,7 +44,8 @@ public class CommentsRepositoryImpl implements CommentsRepository {
             commentsCollectionRef.set(commentData).get();
 
             // 4. Retornamos el ID del documento recién creado
-            return "Comentario creado exitosamente con ID";
+            String commentId = commentsCollectionRef.getId();
+            return commentId;
 
         }).onErrorMap(e -> {
             System.err.println("Error de Firestore al crear comentario: " + e.getMessage());
