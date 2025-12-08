@@ -3,7 +3,7 @@ package com.main.spring.app.repository;
 import org.springframework.http.codec.multipart.FilePart;
 
 import com.google.cloud.firestore.Firestore;
-import com.main.spring.app.interfaces.PostRepository;
+import com.main.spring.app.interfaces.posts.PostRepository;
 import com.main.spring.app.schema.PostsSchema;
 
 import com.google.cloud.firestore.DocumentReference; // Necesario
