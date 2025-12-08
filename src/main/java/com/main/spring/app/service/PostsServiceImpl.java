@@ -3,10 +3,11 @@ package com.main.spring.app.service;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
-import com.main.spring.app.interfaces.PostRepository;
-import com.main.spring.app.interfaces.PostService;
+import com.main.spring.app.interfaces.posts.PostRepository;
+import com.main.spring.app.interfaces.posts.PostService;
+
+import org.springframework.http.HttpStatus;
 
 import reactor.core.publisher.Mono;
 
