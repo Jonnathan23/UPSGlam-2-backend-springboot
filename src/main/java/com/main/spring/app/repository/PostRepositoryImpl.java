@@ -45,7 +45,7 @@ public class PostRepositoryImpl implements PostRepository {
             // 3. Obtener la referencia a la colección 'posts'
             // NOTA: Firestore no necesita que incluyas timestamp en el constructor si
             // usamos Timestamp.now() en el Schema
-            DocumentReference docRef = firestoreDb.collection("posts").document();
+            DocumentReference docRef = firestoreDb.collection("Posts").document();
 
             // 4. Guardar el objeto POJO (Bloqueante)
             // .set() guarda el objeto, y .get() hace que la operación sea síncrona

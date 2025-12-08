@@ -26,7 +26,7 @@ public class PostsControllerImpl {
 
     @PostMapping(consumes = { "multipart/form-data" }) // 👈 HABILITA FormData
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Void> createPost(
+    public Mono<String> createPost(
             @RequestPart("pos_image") Mono<FilePart> filePartMono, // 👈 Archivo
             @RequestPart("pos_caption") String caption, // 👈 Texto
             Authentication authentication // 👈 JWT validado
@@ -44,6 +44,6 @@ public class PostsControllerImpl {
         // 3. DELEGAR al servicio: Pasamos el Mono<FilePart>, caption y UID
         return filePartMono
                 .flatMap(filePart -> this.postService.createPost(filePart, caption, authorUid))
-                .then(); // Retorna Mono<Void> para indicar que la operación finalizó
+                .thenReturn("Publicación creada correctamente"); // Retorna mensaje de éxito
     }
 }
