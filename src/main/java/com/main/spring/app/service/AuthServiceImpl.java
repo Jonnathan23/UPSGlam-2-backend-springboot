@@ -19,9 +19,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Mono<String> registerUser(RegisterRequest request) {
         return authRepository.registerUser(request)
-                .flatMap(uid -> {
-                    System.out.println("LOG: Usuario creado en Firebase Auth. UID: " + uid);
-                    return Mono.just("Registro exitoso. UID: " + uid);
+                .flatMap(message -> {
+                    System.out.println("LOG: Usuario creado en Firebase Auth. UID");
+                    return Mono.just(message);
                 });
     }
 

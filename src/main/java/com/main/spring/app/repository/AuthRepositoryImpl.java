@@ -4,7 +4,9 @@ import com.main.spring.app.dto.FirebaseTokenResponse;
 import com.main.spring.app.interfaces.auth.AuthRepository;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.main.spring.app.model.auth.RegisterRequest;
+import com.main.spring.app.schema.UserSchema;
 import com.main.spring.app.model.auth.LoginRequest;
+import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
 
@@ -13,9 +15,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.http.MediaType;
-
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
 import java.util.Map;
 
 @Repository
@@ -24,13 +26,18 @@ public class AuthRepositoryImpl implements AuthRepository {
     private final FirebaseAuth firebaseAuth;
     private final WebClient webClient;
     private final String firebaseApiKey;
+    private final Firestore firestoreDb;
 
-    public AuthRepositoryImpl(FirebaseAuth firebaseAuth,
+    public AuthRepositoryImpl(
+            FirebaseAuth firebaseAuth,
             @Qualifier("firebaseAuthWebClient") WebClient firebaseAuthWebClient,
-            @Value("${firebase.api.key}") String firebaseApiKey) {
+            @Value("${firebase.api.key}") String firebaseApiKey,
+            Firestore firestoreDb) {
+
         this.firebaseAuth = firebaseAuth;
         this.webClient = firebaseAuthWebClient;
         this.firebaseApiKey = firebaseApiKey;
+        this.firestoreDb = firestoreDb;
     }
 
     @Override
@@ -39,38 +46,35 @@ public class AuthRepositoryImpl implements AuthRepository {
         return Mono.fromCallable(() -> {
             try {
                 UserRecord.CreateRequest createRequest = new UserRecord.CreateRequest()
-                        .setEmail(request.getEmail())
-                        .setPassword(request.getPassword())
-                        .setDisplayName(request.getEmail().split("@")[0]); // Usar parte del email como nombre
+                        .setEmail(request.getUsr_email())
+                        .setPassword(request.getUsr_password())
+                        .setDisplayName(request.getUsr_username());
 
                 UserRecord userRecord = firebaseAuth.createUser(createRequest);
+                String userUid = Objects.requireNonNull(userRecord.getUid(),
+                        "UID de Firebase no puede ser nulo después de la creación.");
 
-                // Retorna la UID de Firebase como el identificador de la cuenta
-                return userRecord.getUid();
+                UserSchema userProfile = new UserSchema(
+                        request.getUsr_username(),
+                        request.getUsr_email(),
+                        request.getUsr_photoUrl(),
+                        request.getUsr_bio());
+
+                firestoreDb.collection("Users").document(userUid).set(userProfile).get();
+
+                return "User registered successfully";
             } catch (FirebaseAuthException e) {
-                // Log para debugging
-                // System.out.println("FirebaseAuthException capturada - ErrorCode: " +
-                // e.getErrorCode());
-                // System.out.println("FirebaseAuthException - Mensaje: " + e.getMessage());
-
-                // Capturar excepción específica de Firebase cuando el email ya existe
-                // getErrorCode() retorna un enum, lo convertimos a String para comparar
-                // Firebase usa ALREADY_EXISTS cuando el email ya existe
                 String errorCodeStr = e.getErrorCode() != null ? e.getErrorCode().name() : null;
                 if (errorCodeStr != null && (errorCodeStr.equals("ALREADY_EXISTS") ||
                         errorCodeStr.equals("EMAIL_EXISTS"))) {
                     throw new RuntimeException("EMAIL_ALREADY_EXISTS");
                 }
-                // Re-lanzar otras excepciones de Firebase
+
                 throw new RuntimeException("Error de Firebase: " + e.getMessage(), e);
             } catch (Exception e) {
-                // Capturar cualquier otra excepción y loggear
-                // System.out.println("Excepción general en registerUser: " +
-                // e.getClass().getName());
-                // System.out.println("Mensaje: " + e.getMessage());
                 if (e.getCause() != null) {
-                    // System.out.println("Causa: " + e.getCause().getClass().getName());
-                    // System.out.println("Causa mensaje: " + e.getCause().getMessage());
+                    System.out.println("Causa: " + e.getCause().getClass().getName());
+                    System.out.println("Causa mensaje: " + e.getCause().getMessage());
                 }
                 throw e;
             }
@@ -95,13 +99,11 @@ public class AuthRepositoryImpl implements AuthRepository {
                 .bodyValue(body)
                 .retrieve()
 
-                .onStatus(s -> s.is4xxClientError(), response ->
-                // El error 4xx indica credenciales incorrectas.
-                Mono.error(new RuntimeException("CREDENCIALES_INVALIDAS")))
+                .onStatus(s -> s.is4xxClientError(),
+                        response -> Mono.error(new RuntimeException("CREDENCIALES_INVALIDAS")))
 
-                // 4. Deserializamos la respuesta exitosa usando la clase pública
                 .bodyToMono(FirebaseTokenResponse.class)
-                // 5. Mapeamos para devolver solo el ID Token
+
                 .map(response -> response.getIdToken());
     }
 
