@@ -108,6 +108,53 @@ Todos estos endpoints aceptan `multipart/form-data` con un archivo `file`. Devue
 
 ### Opción 2: Docker
 
+#### Opción 2.1: Docker Compose (Recomendado - Incluye FastAPI)
+
+**Requisitos:**
+- Docker con soporte NVIDIA GPU (para FastAPI)
+- Imagen de FastAPI construida: `gpu-vision-kit:latest`
+
+**Pasos:**
+1. Descargar Microservicio FastAPI -> [VisionProcessingGPU-Kit](https://github.com/Juanja1306/VisionProcessingGPU-Kit)
+
+```bash
+git clone https://github.com/yourusername/VisionProcessingGPU-Kit.git
+cd VisionProcessingGPU-Kit
+```
+
+2. Construir la imagen de FastAPI:
+```bash
+docker build -t gpu-vision-kit:latest .
+```
+
+3. Construir la imagen de Spring Boot:
+```bash
+cd UPSGlam-2-backend-springboot
+docker build -t upsglam-backend:latest .
+```
+
+4. Ejecutar ambos servicios con Docker Compose:
+```bash
+docker-compose up
+```
+
+5. Ejecutar en segundo plano:
+```bash
+docker-compose up -d
+```
+
+6. Ver logs:
+```bash
+docker-compose logs -f
+```
+
+7. Detener servicios:
+```bash
+docker-compose down
+```
+
+#### Opción 2.2: Docker CLI (Solo Spring Boot)
+
 #### 1. Construir la imagen
 ```bash
 docker build -t upsglam-backend:latest .

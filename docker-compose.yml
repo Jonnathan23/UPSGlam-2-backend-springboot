@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # Servicio FastAPI para procesamiento de imágenes con GPU
+  fastapi-service:
+    image: gpu-vision-kit:latest
+    container_name: gpu-vision-kit
+    ports:
+      - "8000:8000"
+    # Configuración para GPU NVIDIA (requiere Docker con soporte GPU)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - upsglam-network
+
+  # Servicio Spring Boot - API Gateway
+  upsglam-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: upsglam-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Sobrescribir la URL de FastAPI para usar el nombre del servicio
+      - FASTAPI_URL=http://fastapi-service:8000
+      # Java Options
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    depends_on:
+      fastapi-service:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    networks:
+      - upsglam-network
+
+networks:
+  upsglam-network:
+    driver: bridge
+
