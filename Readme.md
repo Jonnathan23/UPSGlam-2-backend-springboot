@@ -112,8 +112,7 @@ Todos estos endpoints aceptan `multipart/form-data` con un archivo `file`. Devue
 
 **Requisitos:**
 - Docker con soporte NVIDIA GPU (para FastAPI)
-- La imagen de FastAPI se descarga automáticamente desde Docker Hub: `juanja/gpu-vision-kit:latest` de Microservicio FastAPI -> [VisionProcessingGPU-Kit](https://github.com/Juanja1306/
-VisionProcessingGPU-Kit) 
+- La imagen de FastAPI se descarga automáticamente desde Docker Hub: `juanja/gpu-vision-kit:latest` de Microservicio FastAPI -> [VisionProcessingGPU-Kit](https://github.com/Juanja1306/VisionProcessingGPU-Kit) 
 
 **Pasos:**
 
