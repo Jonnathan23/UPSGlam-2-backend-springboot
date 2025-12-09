@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# Documentación
+*.md
+!README.md
+GUIA_FASTAPI_A_SPRING.md
+POSTMAN_GUIDE.md
+
+# Archivos de configuración local (no deben estar en Docker)
+# Excluir application.properties de la raíz, pero NO el de src/main/resources/
+application.properties
+!application.template.properties
+# NO excluir src/main/resources/application.properties (se necesita en Docker)
+# NO excluir src/main/resources/envs/serviceAccountKey.json (se necesita en Docker)
+
+# Archivos temporales
+*.log
+*.tmp
+*.swp
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Postman collections (no necesarios en Docker)
+*.postman_collection.json
+
+# Archivos de test
+src/test/

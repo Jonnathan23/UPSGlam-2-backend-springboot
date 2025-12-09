@@ -100,8 +100,33 @@ Todos estos endpoints aceptan `multipart/form-data` con un archivo `file`. Devue
 
 ## 🏃 Ejecución
 
+### Opción 1: Ejecución Local
+
 ```bash
 .\mvnw spring-boot:run
+```
+
+### Opción 2: Docker
+
+#### 1. Construir la imagen
+```bash
+docker build -t upsglam-backend:latest .
+```
+
+#### 2. Ejecutar el contenedor
+```powershell
+# Simple - Todo está en la imagen (application.properties y serviceAccountKey.json)
+docker run --rm `
+  --name upsglam-backend `
+  -p 8080:8080 `
+  upsglam-backend:latest
+```
+
+**Nota:** El `application.properties` y `serviceAccountKey.json` ya están incluidos en la imagen, así que no necesitas pasar variables de entorno ni montar volúmenes.
+
+#### 3. Ver logs
+```bash
+docker logs -f upsglam-backend
 ```
 
 ---
