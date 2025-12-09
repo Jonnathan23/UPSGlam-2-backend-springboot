@@ -142,22 +142,27 @@ public class PostRepositoryImpl implements PostRepository {
     @Override
     public Flux<PostsSchema> getPostsByAuthor(String authorUid) {
 
-        // 1. Ejecutamos la consulta bloqueante dentro de un Mono.fromCallable
         Mono<List<PostsSchema>> postsListMono = Mono.fromCallable(() -> {
 
-            // Consulta Firestore: Colección "Posts" donde pos_authorUid sea igual al
-            // parámetro
+            // ... (código de consulta)
             QuerySnapshot snapshot = firestoreDb.collection("Posts")
                     .whereEqualTo("pos_authorUid", authorUid)
-                    .orderBy("pos_timestamp", com.google.cloud.firestore.Query.Direction.DESCENDING) // Orden
-                                                                                                     // cronológico
-                    .get() // Ejecuta la llamada bloqueante
-                    .get(); // Obtiene el resultado (lanza ExecutionException si falla)
+                    .orderBy("pos_timestamp", com.google.cloud.firestore.Query.Direction.DESCENDING)
+                    .get()
+                    .get();
 
-            // Mapeamos los resultados:
+            // 🚨 Mapeo Corregido: Extrayendo el Document ID 🚨
             List<PostsSchema> posts = snapshot.getDocuments()
                     .stream()
-                    .map(document -> document.toObject(PostsSchema.class))
+                    .map(document -> {
+                        // Mapear los campos internos del documento
+                        PostsSchema post = document.toObject(PostsSchema.class);
+
+                        // ASIGNAR MANUALMENTE EL ID DEL DOCUMENTO
+                        post.setPos_postId(document.getId());
+
+                        return post;
+                    })
                     .toList();
 
             return posts;
@@ -167,8 +172,6 @@ public class PostRepositoryImpl implements PostRepository {
             return new RuntimeException("FIRESTORE_QUERY_FAILED", e);
         });
 
-        // 2. Convertimos el Mono<List<PostsSchema>> a un Flux<PostsSchema>
-        // Esto permite que el Controller reciba el stream reactivo de posts.
         return postsListMono.flatMapIterable(posts -> posts);
     }
 
