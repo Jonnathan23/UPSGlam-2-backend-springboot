@@ -1,6 +1,8 @@
 package com.main.spring.app.controller;
 
 import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -9,10 +11,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.main.spring.app.interfaces.posts.PostService;
+import com.main.spring.app.schema.PostsSchema;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -46,5 +50,12 @@ public class PostsControllerImpl {
         return filePartMono
                 .flatMap(filePart -> this.postService.createPost(filePart, caption, authorUid))
                 .thenReturn("Publicación creada correctamente"); // Retorna mensaje de éxito
+    }
+
+    @GetMapping("/by-author/{authorUid}") // 👈 Endpoint GET con Path Variable
+    public Flux<PostsSchema> getPostsByAuthor(@PathVariable String authorUid) {
+        
+        // El Controller solo delega la consulta al Service
+        return postService.getPostsByAuthor(authorUid);
     }
 }

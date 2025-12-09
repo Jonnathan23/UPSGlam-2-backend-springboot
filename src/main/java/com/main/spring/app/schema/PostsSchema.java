@@ -9,6 +9,7 @@ import com.google.cloud.Timestamp;
 
 public class PostsSchema {
 
+    public String pos_postId;
     public String pos_authorUid;
     public String pos_imageUrl;
     public String pos_caption;

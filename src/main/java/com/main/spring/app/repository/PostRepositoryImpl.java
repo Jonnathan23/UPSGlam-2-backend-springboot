@@ -1,12 +1,12 @@
 package com.main.spring.app.repository;
 
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 
 import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.http.codec.multipart.FilePart;
+import com.google.cloud.firestore.QuerySnapshot;
 
 import com.google.cloud.firestore.Firestore;
 import com.main.spring.app.interfaces.posts.PostRepository;
@@ -16,11 +16,12 @@ import com.main.spring.app.service.SupabaseStorageService;
 import com.google.cloud.firestore.DocumentReference; // Necesario
 import com.google.cloud.firestore.FieldValue;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.stereotype.Repository;
 import java.util.Objects;
-
+import java.util.List;
 import java.nio.ByteBuffer;
 
 @Repository
@@ -37,7 +38,7 @@ public class PostRepositoryImpl implements PostRepository {
     @Override
     public Mono<String> createPost(FilePart filePart, String caption, String authorUid) {
 
-         // 1. Convertir FilePart a byte[] de forma reactiva
+        // 1. Convertir FilePart a byte[] de forma reactiva
         Mono<byte[]> imageBytesMono = DataBufferUtils.join(filePart.content())
                 .map(dataBuffer -> {
                     ByteBuffer byteBuffer = dataBuffer.asByteBuffer();
@@ -135,6 +136,43 @@ public class PostRepositoryImpl implements PostRepository {
                     + ". Causa: " + e.getMessage());
             return Mono.error(new RuntimeException("FIRESTORE_COMMENT_COUNT_UPDATE_FAILED"));
         }).then(); // Convertir el resultado a Mono<Void>
+    }
+
+    // *Gets */
+    @Override
+    public Flux<PostsSchema> getPostsByAuthor(String authorUid) {
+
+        Mono<List<PostsSchema>> postsListMono = Mono.fromCallable(() -> {
+
+            // ... (código de consulta)
+            QuerySnapshot snapshot = firestoreDb.collection("Posts")
+                    .whereEqualTo("pos_authorUid", authorUid)
+                    .orderBy("pos_timestamp", com.google.cloud.firestore.Query.Direction.DESCENDING)
+                    .get()
+                    .get();
+
+            // 🚨 Mapeo Corregido: Extrayendo el Document ID 🚨
+            List<PostsSchema> posts = snapshot.getDocuments()
+                    .stream()
+                    .map(document -> {
+                        // Mapear los campos internos del documento
+                        PostsSchema post = document.toObject(PostsSchema.class);
+
+                        // ASIGNAR MANUALMENTE EL ID DEL DOCUMENTO
+                        post.setPos_postId(document.getId());
+
+                        return post;
+                    })
+                    .toList();
+
+            return posts;
+
+        }).onErrorMap(e -> {
+            System.err.println("Error de Firestore al consultar: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_QUERY_FAILED", e);
+        });
+
+        return postsListMono.flatMapIterable(posts -> posts);
     }
 
 }

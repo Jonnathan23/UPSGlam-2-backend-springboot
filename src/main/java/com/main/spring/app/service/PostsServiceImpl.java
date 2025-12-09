@@ -6,9 +6,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.main.spring.app.interfaces.posts.PostRepository;
 import com.main.spring.app.interfaces.posts.PostService;
+import com.main.spring.app.schema.PostsSchema;
 
 import org.springframework.http.HttpStatus;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -51,6 +53,18 @@ public class PostsServiceImpl implements PostService {
                     System.err.println("ERROR: Error no manejado durante la creación del Post. Causa: " + errorMessage);
                     return Mono.error(new ResponseStatusException(
                             HttpStatus.INTERNAL_SERVER_ERROR, "Error interno al crear el post."));
+                });
+    }
+
+    @Override
+    public Flux<PostsSchema> getPostsByAuthor(String authorUid) {
+
+        // Delegamos la consulta directamente al repositorio
+        return postRepository.getPostsByAuthor(authorUid)
+                .onErrorResume(e -> {
+                    System.err.println("ERROR: Fallo al consultar posts por autor. Causa: " + e.getMessage());
+                    // Devolvemos un Flux vacío en caso de error de consulta
+                    return Flux.empty();
                 });
     }
 }
