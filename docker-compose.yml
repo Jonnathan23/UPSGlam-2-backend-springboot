@@ -2,12 +2,14 @@ version: '3.8'
 
 services:
   # Servicio FastAPI para procesamiento de imágenes con GPU
+  # Descarga la imagen desde Docker Hub: juanja/gpu-vision-kit:latest
   fastapi-service:
-    image: gpu-vision-kit:latest
+    image: juanja/gpu-vision-kit:latest
     container_name: gpu-vision-kit
     ports:
       - "8000:8000"
     # Configuración para GPU NVIDIA (requiere Docker con soporte GPU)
+    # Opción 1: Para Docker Compose 3.8+ (recomendado)
     deploy:
       resources:
         reservations:
@@ -15,7 +17,10 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    # Opción 2: Si la opción 1 no funciona, descomenta la siguiente línea y comenta la sección deploy:
+    # runtime: nvidia
     environment:
+      - NVIDIA_VISIBLE_DEVICES=all
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
