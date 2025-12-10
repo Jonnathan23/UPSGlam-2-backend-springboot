@@ -53,4 +53,42 @@ public class CommentsRepositoryImpl implements CommentsRepository {
         });
     }
 
+    @Override
+    public Mono<CommenSchema> getCommentById(String postId, String commentId) {
+        return Mono.fromCallable(() -> {
+            DocumentReference commentRef = firestoreDb.collection("Posts")
+                    .document(Objects.requireNonNull(postId, "postId no puede ser null"))
+                    .collection("Comments")
+                    .document(Objects.requireNonNull(commentId, "commentId no puede ser null"));
+
+            var documentSnapshot = commentRef.get().get();
+            
+            if (!documentSnapshot.exists()) {
+                return null;
+            }
+
+            return documentSnapshot.toObject(CommenSchema.class);
+        }).onErrorMap(e -> {
+            System.err.println("Error de Firestore al obtener comentario por ID: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_GET_COMMENT_FAILED", e);
+        });
+    }
+
+    @Override
+    public Mono<Void> deleteComment(String postId, String commentId) {
+        return Mono.fromCallable(() -> {
+            DocumentReference commentRef = firestoreDb.collection("Posts")
+                    .document(Objects.requireNonNull(postId, "postId no puede ser null"))
+                    .collection("Comments")
+                    .document(Objects.requireNonNull(commentId, "commentId no puede ser null"));
+
+            // Eliminar el documento de Firestore
+            commentRef.delete().get();
+            return null;
+        }).onErrorMap(e -> {
+            System.err.println("Error de Firestore al eliminar comentario: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_DELETE_COMMENT_FAILED", e);
+        }).then();
+    }
+
 }

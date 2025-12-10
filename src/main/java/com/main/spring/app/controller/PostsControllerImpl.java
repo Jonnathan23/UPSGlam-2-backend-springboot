@@ -1,6 +1,7 @@
 package com.main.spring.app.controller;
 
 import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,5 +58,18 @@ public class PostsControllerImpl {
         
         // El Controller solo delega la consulta al Service
         return postService.getPostsByAuthor(authorUid);
+    }
+
+    @DeleteMapping("/{postId}") // 👈 Endpoint DELETE con Path Variable
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<String> deletePost(
+            @PathVariable String postId,
+            Authentication authentication // JWT validado
+    ) {
+        // 1. EXTRAER UID del JWT (que Spring Security ya verificó)
+        String authorUid = (String) authentication.getPrincipal();
+
+        // 2. DELEGAR al servicio: Pasamos el postId y el UID para validación
+        return postService.deletePost(postId, authorUid);
     }
 }
