@@ -77,4 +77,46 @@ public class SupabaseStorageService {
     private String getPublicUrl(String projectId, String filename) {
         return "https://" + projectId + ".supabase.co/storage/v1/object/public/" + supabaseBucket + "/" + filename;
     }
+
+    public Mono<Void> deleteImage(String imageUrl) {
+        if (supabaseUrl.isEmpty() || supabaseKey.isEmpty() || supabaseBucket.isEmpty()) {
+            return Mono.error(new RuntimeException("Supabase configuration is missing in application.properties"));
+        }
+
+        // Extraer el nombre del archivo de la URL pública
+        // Formato: https://{projectId}.supabase.co/storage/v1/object/public/{bucket}/{filename}
+        String filename;
+        try {
+            String[] parts = imageUrl.split("/");
+            filename = parts[parts.length - 1];
+        } catch (Exception e) {
+            return Mono.error(new RuntimeException("Invalid image URL format: " + imageUrl));
+        }
+
+        // Extraer project ID de la URL
+        String projectId = "qfmfnvmuceggqkueiypy"; // Fallback default
+        if (supabaseUrl.contains(".")) {
+            try {
+                String host = java.net.URI.create(supabaseUrl).getHost();
+                projectId = host.split("\\.")[0];
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+
+        String finalProjectId = projectId;
+        String deleteUrl = "https://" + finalProjectId + ".supabase.co/storage/v1/object/" + supabaseBucket + "/"
+                + filename;
+
+        return webClient.delete()
+                .uri(deleteUrl)
+                .header("Authorization", "Bearer " + supabaseKey)
+                .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> Mono.error(new RuntimeException("Error deleting from Supabase: "
+                                        + clientResponse.statusCode() + " - " + errorBody))))
+                .bodyToMono(Void.class)
+                .then();
+    }
 }

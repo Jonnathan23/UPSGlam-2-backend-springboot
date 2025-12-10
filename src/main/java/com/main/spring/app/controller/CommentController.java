@@ -8,6 +8,7 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,6 +45,20 @@ public class CommentController {
                     return Mono.error(new ResponseStatusException(
                             HttpStatus.INTERNAL_SERVER_ERROR, "Error interno al procesar el comentario."));
                 });
+    }
+
+    @DeleteMapping("/{postId}/comments/{commentId}") // 👈 Endpoint DELETE con Path Variables
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<String> deleteComment(
+            @PathVariable String postId,
+            @PathVariable String commentId,
+            Authentication authentication // JWT validado
+    ) {
+        // 1. Extraer UID del autor del JWT
+        String authorUid = (String) authentication.getPrincipal();
+
+        // 2. Delegar al Service para eliminar el comentario
+        return commentsService.deleteComment(postId, commentId, authorUid);
     }
 
 }

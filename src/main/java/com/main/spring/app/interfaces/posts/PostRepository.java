@@ -12,4 +12,6 @@ public interface PostRepository {
     Mono<Void> updateLikeCount(String postId, int increment);
     Mono<Void> updateCommentCount(String postId, int increment);
     Flux<PostsSchema> getPostsByAuthor(String authorUid);
+    Mono<PostsSchema> getPostById(String postId);
+    Mono<Void> deletePost(String postId);
 }

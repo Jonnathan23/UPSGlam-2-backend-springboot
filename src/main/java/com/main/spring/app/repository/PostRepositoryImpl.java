@@ -175,4 +175,42 @@ public class PostRepositoryImpl implements PostRepository {
         return postsListMono.flatMapIterable(posts -> posts);
     }
 
+    @Override
+    public Mono<PostsSchema> getPostById(String postId) {
+        return Mono.fromCallable(() -> {
+            DocumentReference postRef = firestoreDb.collection("Posts")
+                    .document(Objects.requireNonNull(postId, "postId no puede ser null"));
+
+            var documentSnapshot = postRef.get().get();
+            
+            if (!documentSnapshot.exists()) {
+                return null;
+            }
+
+            PostsSchema post = documentSnapshot.toObject(PostsSchema.class);
+            if (post != null) {
+                post.setPos_postId(documentSnapshot.getId());
+            }
+            return post;
+        }).onErrorMap(e -> {
+            System.err.println("Error de Firestore al obtener post por ID: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_GET_POST_FAILED", e);
+        });
+    }
+
+    @Override
+    public Mono<Void> deletePost(String postId) {
+        return Mono.fromCallable(() -> {
+            DocumentReference postRef = firestoreDb.collection("Posts")
+                    .document(Objects.requireNonNull(postId, "postId no puede ser null"));
+
+            // Eliminar el documento de Firestore
+            postRef.delete().get();
+            return null;
+        }).onErrorMap(e -> {
+            System.err.println("Error de Firestore al eliminar post: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_DELETE_POST_FAILED", e);
+        }).then();
+    }
+
 }
