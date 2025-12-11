@@ -22,7 +22,6 @@ import reactor.core.publisher.Mono;
 import org.springframework.stereotype.Repository;
 import java.util.Objects;
 import java.util.List;
-import java.nio.ByteBuffer;
 
 @Repository
 public class PostRepositoryImpl implements PostRepository {
@@ -41,9 +40,8 @@ public class PostRepositoryImpl implements PostRepository {
         // 1. Convertir FilePart a byte[] de forma reactiva
         Mono<byte[]> imageBytesMono = DataBufferUtils.join(filePart.content())
                 .map(dataBuffer -> {
-                    ByteBuffer byteBuffer = dataBuffer.asByteBuffer();
-                    byte[] bytes = new byte[byteBuffer.remaining()];
-                    byteBuffer.get(bytes);
+                    byte[] bytes = new byte[dataBuffer.readableByteCount()];
+                    dataBuffer.read(bytes);
                     DataBufferUtils.release(dataBuffer);
                     return bytes;
                 });

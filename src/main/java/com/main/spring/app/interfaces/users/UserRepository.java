@@ -1,7 +1,6 @@
 package com.main.spring.app.interfaces.users;
 
 import com.main.spring.app.dto.UserSearchResponse;
-import org.springframework.http.codec.multipart.FilePart;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

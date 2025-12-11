@@ -134,9 +134,11 @@ public class UserRepositoryImpl implements UserRepository {
             DocumentReference userRef = firestoreDb.collection("Users")
                     .document(Objects.requireNonNull(userId, "userId no puede ser null"));
 
-            Map<String, Object> update = Collections.singletonMap(
-                    "usr_photoUrl",
-                    Objects.requireNonNull(photoUrl, "photoUrl no puede ser null"));
+            Map<String, Object> update = Objects.requireNonNull(
+                    Collections.singletonMap(
+                            "usr_photoUrl",
+                            Objects.requireNonNull(photoUrl, "photoUrl no puede ser null")),
+                    "update map no puede ser null");
 
             userRef.update(update).get();
             return null;
@@ -152,9 +154,11 @@ public class UserRepositoryImpl implements UserRepository {
             DocumentReference userRef = firestoreDb.collection("Users")
                     .document(Objects.requireNonNull(userId, "userId no puede ser null"));
 
-            Map<String, Object> update = Collections.singletonMap(
-                    "usr_bio",
-                    Objects.requireNonNull(bio, "bio no puede ser null"));
+            Map<String, Object> update = Objects.requireNonNull(
+                    Collections.singletonMap(
+                            "usr_bio",
+                            Objects.requireNonNull(bio, "bio no puede ser null")),
+                    "update map no puede ser null");
 
             userRef.update(update).get();
             return null;
