@@ -1,5 +1,6 @@
 package com.main.spring.app.repository;
 
+import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.main.spring.app.dto.UserSearchResponse;
@@ -9,8 +10,10 @@ import com.main.spring.app.schema.UserSchema;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -125,6 +128,44 @@ public class UserRepositoryImpl implements UserRepository {
             System.err.println("Error de Firestore al obtener usuario por ID: " + e.getMessage());
             return new RuntimeException("FIRESTORE_GET_USER_FAILED", e);
         });
+    }
+
+    @Override
+    public Mono<Void> updatePhotoUrl(String userId, String photoUrl) {
+        return Mono.fromCallable(() -> {
+            DocumentReference userRef = firestoreDb.collection("Users")
+                    .document(Objects.requireNonNull(userId, "userId no puede ser null"));
+
+            Map<String, Object> update = Collections.singletonMap(
+                    "usr_photoUrl",
+                    Objects.requireNonNull(photoUrl, "photoUrl no puede ser null")
+            );
+
+            userRef.update(update).get();
+            return null;
+        }).onErrorMap(e -> {
+            System.err.println("Error de Firestore al actualizar photoUrl: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_UPDATE_PHOTO_FAILED", e);
+        }).then();
+    }
+
+    @Override
+    public Mono<Void> updateBio(String userId, String bio) {
+        return Mono.fromCallable(() -> {
+            DocumentReference userRef = firestoreDb.collection("Users")
+                    .document(Objects.requireNonNull(userId, "userId no puede ser null"));
+
+            Map<String, Object> update = Collections.singletonMap(
+                    "usr_bio",
+                    Objects.requireNonNull(bio, "bio no puede ser null")
+            );
+
+            userRef.update(update).get();
+            return null;
+        }).onErrorMap(e -> {
+            System.err.println("Error de Firestore al actualizar bio: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_UPDATE_BIO_FAILED", e);
+        }).then();
     }
 }
 
