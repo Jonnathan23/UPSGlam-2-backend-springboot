@@ -7,8 +7,12 @@ import reactor.core.publisher.Mono;
 
 public interface UserRepository {
     Flux<UserSearchResponse> searchUsers(String query, int limit);
-    Mono<com.main.spring.app.schema.UserSchema> getUserById(String userId);
-    Mono<Void> updatePhotoUrl(String userId, String photoUrl);
-    Mono<Void> updateBio(String userId, String bio);
-}
 
+    Mono<com.main.spring.app.schema.UserSchema> getUserById(String userId);
+
+    Mono<Void> updatePhotoUrl(String userId, String photoUrl);
+
+    Mono<Void> updateBio(String userId, String bio);
+
+    Mono<com.main.spring.app.schema.UserSchema> findUserByEmail(String email);
+}

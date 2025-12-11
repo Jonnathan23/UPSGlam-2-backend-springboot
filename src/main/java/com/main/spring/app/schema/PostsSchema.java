@@ -16,6 +16,7 @@ public class PostsSchema {
     public Timestamp pos_timestamp;
     public int pos_likesCount = 0;
     public int pos_commentsCount = 0;
+    public java.util.List<String> pos_mentionedUids;
 
     public PostsSchema(String pos_authorUid, String pos_imageUrl, String pos_caption) {
         this.pos_authorUid = pos_authorUid;

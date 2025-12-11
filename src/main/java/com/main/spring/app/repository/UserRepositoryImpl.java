@@ -62,8 +62,7 @@ public class UserRepositoryImpl implements UserRepository {
                                 document.getId(),
                                 username,
                                 email,
-                                user.getUsr_photoUrl()
-                        ));
+                                user.getUsr_photoUrl()));
                     }
                 }
             });
@@ -88,8 +87,7 @@ public class UserRepositoryImpl implements UserRepository {
                                 document.getId(),
                                 username,
                                 email,
-                                user.getUsr_photoUrl()
-                        ));
+                                user.getUsr_photoUrl()));
                     }
                 }
             });
@@ -138,8 +136,7 @@ public class UserRepositoryImpl implements UserRepository {
 
             Map<String, Object> update = Collections.singletonMap(
                     "usr_photoUrl",
-                    Objects.requireNonNull(photoUrl, "photoUrl no puede ser null")
-            );
+                    Objects.requireNonNull(photoUrl, "photoUrl no puede ser null"));
 
             userRef.update(update).get();
             return null;
@@ -157,8 +154,7 @@ public class UserRepositoryImpl implements UserRepository {
 
             Map<String, Object> update = Collections.singletonMap(
                     "usr_bio",
-                    Objects.requireNonNull(bio, "bio no puede ser null")
-            );
+                    Objects.requireNonNull(bio, "bio no puede ser null"));
 
             userRef.update(update).get();
             return null;
@@ -167,5 +163,29 @@ public class UserRepositoryImpl implements UserRepository {
             return new RuntimeException("FIRESTORE_UPDATE_BIO_FAILED", e);
         }).then();
     }
-}
 
+    @Override
+    public Mono<UserSchema> findUserByEmail(String email) {
+        return Mono.fromCallable(() -> {
+            QuerySnapshot snapshot = firestoreDb.collection("Users")
+                    .whereEqualTo("usr_email", email)
+                    .limit(1)
+                    .get()
+                    .get();
+
+            if (snapshot.isEmpty()) {
+                return null;
+            }
+
+            var document = snapshot.getDocuments().get(0);
+            UserSchema user = document.toObject(UserSchema.class);
+            if (user != null) {
+                user.setUsr_id(document.getId());
+            }
+            return user;
+        }).onErrorMap(e -> {
+            System.err.println("ERROR: Fallo al buscar usuario por email " + email + ". Causa: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_FIND_BY_EMAIL_FAILED", e);
+        });
+    }
+}

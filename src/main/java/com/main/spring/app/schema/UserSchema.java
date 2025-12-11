@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 public class UserSchema {
 
+    public String usr_id;
     public String usr_username;
     public String usr_email;
     public String usr_photoUrl;
