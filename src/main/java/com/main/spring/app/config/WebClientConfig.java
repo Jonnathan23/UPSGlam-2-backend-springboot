@@ -38,7 +38,7 @@ public class WebClientConfig {
         return builder
                 .baseUrl(fastApiUrl) // URL base: localhost:8000
                 // Configuramos el buffer grande para la subida o descarga de imágenes
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(50 * 1024 * 1024))
                 .build();
     }
 }
