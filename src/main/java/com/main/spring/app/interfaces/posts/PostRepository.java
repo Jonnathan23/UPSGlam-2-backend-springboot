@@ -8,10 +8,15 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface PostRepository {
-    Mono<String> createPost(FilePart filePart, String caption, String authorUid);
+    Mono<String> createPost(FilePart filePart, String caption, String authorUid, java.util.List<String> mentionedUids);
+
     Mono<Void> updateLikeCount(String postId, int increment);
+
     Mono<Void> updateCommentCount(String postId, int increment);
+
     Flux<PostsSchema> getPostsByAuthor(String authorUid);
+
     Mono<PostsSchema> getPostById(String postId);
+
     Mono<Void> deletePost(String postId);
 }

@@ -36,7 +36,7 @@ public class PostRepositoryImpl implements PostRepository {
     }
 
     @Override
-    public Mono<String> createPost(FilePart filePart, String caption, String authorUid) {
+    public Mono<String> createPost(FilePart filePart, String caption, String authorUid, List<String> mentionedUids) {
 
         // 1. Convertir FilePart a byte[] de forma reactiva
         Mono<byte[]> imageBytesMono = DataBufferUtils.join(filePart.content())
@@ -61,6 +61,11 @@ public class PostRepositoryImpl implements PostRepository {
                     authorUid,
                     imageUrl, // URL obtenida del bucket
                     caption);
+
+            // Asignar los UIDs mencionados si existen
+            if (mentionedUids != null && !mentionedUids.isEmpty()) {
+                newPost.setPos_mentionedUids(mentionedUids);
+            }
 
             // 4. Obtener la referencia a la colección 'posts'
             // NOTA: Firestore no necesita que incluyas timestamp en el constructor si
@@ -182,7 +187,7 @@ public class PostRepositoryImpl implements PostRepository {
                     .document(Objects.requireNonNull(postId, "postId no puede ser null"));
 
             var documentSnapshot = postRef.get().get();
-            
+
             if (!documentSnapshot.exists()) {
                 return null;
             }
