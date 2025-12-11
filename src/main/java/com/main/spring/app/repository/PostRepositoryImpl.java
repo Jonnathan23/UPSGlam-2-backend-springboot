@@ -162,7 +162,9 @@ public class PostRepositoryImpl implements PostRepository {
                         PostsSchema post = document.toObject(PostsSchema.class);
 
                         // ASIGNAR MANUALMENTE EL ID DEL DOCUMENTO
-                        post.setPos_postId(document.getId());
+                        if (post != null) {
+                            post.setPos_postId(document.getId());
+                        }
 
                         return post;
                     })

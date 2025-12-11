@@ -7,6 +7,8 @@ import com.main.spring.app.interfaces.posts.PostRepository;
 import reactor.core.publisher.Mono;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 @Service
 public class LikeServiceImpl implements LikeService {
@@ -30,8 +32,10 @@ public class LikeServiceImpl implements LikeService {
                 })
                 .doOnSuccess(
                         message -> System.out.println("LOG: " + message + " y contador actualizado en post " + postId))
-                .onErrorResume(e ->
-                // Propaga el error del repositorio (incluyendo ALREADY_LIKED)
-                Mono.error(e));
+                .onErrorResume(e -> {
+                    System.err.println("ERROR: Fallo al procesar like. Causa: " + e.getMessage());
+                    return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Error interno al procesar el like.", e));
+                });
     }
 }

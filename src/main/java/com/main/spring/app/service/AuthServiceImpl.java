@@ -6,6 +6,8 @@ import com.main.spring.app.model.auth.LoginRequest;
 import com.main.spring.app.model.auth.RegisterRequest;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -30,7 +32,8 @@ public class AuthServiceImpl implements AuthService {
         // 1. Llama al repositorio para verificar credenciales y obtener el token.
         return authRepository.loginUser(request)
                 .doOnSuccess(token -> System.out.println("LOG: Login exitoso. Token obtenido."))
-                .onErrorResume(e -> Mono.error(new RuntimeException("Error en login: " + e.getMessage())));
+                .onErrorResume(e -> Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "Credenciales inválidas o error de login", e)));
     }
 
 }
