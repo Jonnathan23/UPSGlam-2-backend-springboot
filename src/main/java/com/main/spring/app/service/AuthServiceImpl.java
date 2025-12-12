@@ -4,6 +4,8 @@ import com.main.spring.app.interfaces.auth.AuthRepository;
 import com.main.spring.app.interfaces.auth.AuthService;
 import com.main.spring.app.model.auth.LoginRequest;
 import com.main.spring.app.model.auth.RegisterRequest;
+import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -31,6 +33,10 @@ public class AuthServiceImpl implements AuthService {
     public Mono<String> loginUser(LoginRequest request) {
         // 1. Llama al repositorio para verificar credenciales y obtener el token.
         return authRepository.loginUser(request)
+                .timeout(Duration.ofSeconds(10))
+                .onErrorResume(TimeoutException.class,
+                        e -> Mono.error(new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT,
+                                "El servicio de autenticación tardó demasiado en responder.")))
                 .doOnSuccess(token -> System.out.println("LOG: Login exitoso. Token obtenido."))
                 .onErrorResume(e -> Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "Credenciales inválidas o error de login", e)));

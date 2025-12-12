@@ -5,6 +5,8 @@ import com.main.spring.app.interfaces.likes.LikeService;
 import com.main.spring.app.interfaces.posts.PostRepository;
 
 import reactor.core.publisher.Mono;
+import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,6 +26,10 @@ public class LikeServiceImpl implements LikeService {
     public Mono<String> createLike(String postId, String authorUid) {
 
         return likeRepository.createLike(postId, authorUid) // 1. CREAR EL DOCUMENTO LIKE
+                .timeout(Duration.ofSeconds(10))
+                .onErrorResume(TimeoutException.class,
+                        e -> Mono.error(new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT,
+                                "El servicio de likes tardó demasiado en responder.")))
                 .flatMap(message -> {
                     int increment = (message.contains("creado")) ? 1 : -1;
                     return postRepository

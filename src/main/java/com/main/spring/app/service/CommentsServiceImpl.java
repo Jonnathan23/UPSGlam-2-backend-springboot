@@ -10,6 +10,8 @@ import com.main.spring.app.interfaces.posts.PostRepository;
 import org.springframework.http.HttpStatus;
 
 import reactor.core.publisher.Mono;
+import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class CommentsServiceImpl implements CommentsService {
@@ -26,6 +28,10 @@ public class CommentsServiceImpl implements CommentsService {
         public Mono<String> createComment(String postId, String authorUid, String text) {
 
                 return commentsRepository.createComment(postId, authorUid, text) // 1. CREAR EL COMENTARIO
+                                .timeout(Duration.ofSeconds(10))
+                                .onErrorResume(TimeoutException.class, e -> Mono.error(new ResponseStatusException(
+                                                HttpStatus.GATEWAY_TIMEOUT,
+                                                "El servicio de comentarios tardó demasiado en responder.")))
                                 .flatMap(commentId -> {
 
                                         // Si el comentario fue creado exitosamente, procedemos a actualizar el
