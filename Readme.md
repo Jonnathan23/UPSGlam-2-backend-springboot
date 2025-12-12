@@ -26,6 +26,266 @@ El sistema sigue una arquitectura de microservicios moderna:
 
 ---
 
+## 🏗️ Arquitectura del Backend
+
+### Diagrama de Arquitectura General
+
+```mermaid
+graph TB
+    subgraph Client["🌐 Cliente (Flutter/Postman)"]
+        ClientRequest[Request HTTP]
+    end
+
+    subgraph Security["🔒 Capa de Seguridad"]
+        SecurityConfig[SecurityConfig]
+        AuthConverter[BearerTokenServerAuthenticationConverter]
+        AuthManager[FirebaseAuthenticationManager]
+        SecurityConfig --> AuthConverter
+        SecurityConfig --> AuthManager
+        AuthManager --> FirebaseAuth[Firebase Auth<br/>Verificar JWT]
+    end
+
+    subgraph Controllers["📡 Controladores (REST)"]
+        AuthCtrl[AuthControllerImpl<br/>/api/auth]
+        PostsCtrl[PostsControllerImpl<br/>/api/posts]
+        CommentCtrl[CommentController<br/>/api/posts]
+        LikeCtrl[LikeControllerImpl<br/>/api/posts]
+        SubCtrl[SubscriptionController<br/>/api/users]
+        UserCtrl[UserController<br/>/api/users]
+        ImageCtrl[ImageProcessingController<br/>/api/process]
+        DiscoveryCtrl[DiscoveryController<br/>/discovery]
+    end
+
+    subgraph Services["⚙️ Capa de Servicios"]
+        AuthService[AuthServiceImpl]
+        PostService[PostsServiceImpl]
+        CommentService[CommentsServiceImpl]
+        LikeService[LikeServiceImpl]
+        SubService[SubscriptionServiceImpl]
+        UserService[UserServiceImpl]
+        ImageService[ImageProcessingService]
+        SupabaseService[SupabaseStorageService]
+    end
+
+    subgraph Repositories["💾 Capa de Repositorios"]
+        AuthRepo[AuthRepositoryImpl]
+        PostRepo[PostRepositoryImpl]
+        CommentRepo[CommentsRepositoryImpl]
+        LikeRepo[LikeRepositoryImpl]
+        SubRepo[SubscriptionRepositoryImpl]
+        UserRepo[UserRepositoryImpl]
+    end
+
+    subgraph External["🌍 Servicios Externos"]
+        FirebaseAuthExt[Firebase Auth API<br/>Login/Register]
+        FirestoreDB[(Firestore Database<br/>Users, Posts, Comments,<br/>Likes, Subscriptions)]
+        SupabaseStorage[Supabase Storage<br/>Imágenes]
+        FastAPI[FastAPI Service<br/>Procesamiento GPU]
+    end
+
+    subgraph Config["⚙️ Configuración"]
+        FirebaseConfig[FirebaseConfig<br/>FirebaseApp, Firestore, Auth]
+        WebClientConfig[WebClientConfig<br/>fastApiWebClient<br/>firebaseAuthWebClient]
+        ExceptionHandler[GlobalExceptionHandler<br/>Manejo de Errores]
+    end
+
+    %% Flujo de Request
+    ClientRequest --> SecurityConfig
+    SecurityConfig -->|"JWT válido"| Controllers
+
+    %% Controllers a Services
+    AuthCtrl --> AuthService
+    PostsCtrl --> PostService
+    CommentCtrl --> CommentService
+    LikeCtrl --> LikeService
+    SubCtrl --> SubService
+    UserCtrl --> UserService
+    ImageCtrl --> ImageService
+
+    %% Services a Repositories
+    AuthService --> AuthRepo
+    PostService --> PostRepo
+    PostService --> SupabaseService
+    CommentService --> CommentRepo
+    CommentService --> PostRepo
+    LikeService --> LikeRepo
+    LikeService --> PostRepo
+    SubService --> SubRepo
+    SubService --> UserRepo
+    UserService --> UserRepo
+    UserService --> SupabaseService
+
+    %% Services a External
+    ImageService --> FastAPI
+    ImageService --> SupabaseService
+    SupabaseService --> SupabaseStorage
+    AuthRepo --> FirebaseAuthExt
+    AuthRepo --> FirestoreDB
+
+    %% Repositories a External
+    PostRepo --> FirestoreDB
+    PostRepo --> SupabaseService
+    CommentRepo --> FirestoreDB
+    LikeRepo --> FirestoreDB
+    SubRepo --> FirestoreDB
+    UserRepo --> FirestoreDB
+
+    %% Config connections
+    FirebaseConfig --> FirestoreDB
+    FirebaseConfig --> FirebaseAuthExt
+    WebClientConfig --> FastAPI
+    WebClientConfig --> FirebaseAuthExt
+
+    %% Exception Handler
+    Controllers -.->|"Errores"| ExceptionHandler
+
+    style Security fill:#8b0000
+    style Controllers fill:#003366
+    style Services fill:#006400
+    style Repositories fill:#8b4513
+    style External fill:#4b0082
+    style Config fill:#556b2f
+```
+
+### Flujo de Autenticación
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant SecurityConfig
+    participant AuthConverter
+    participant AuthManager
+    participant FirebaseAuth
+    participant Controller
+    participant Service
+    participant Repository
+    participant Firestore
+
+    Client->>SecurityConfig: Request con Bearer Token
+    SecurityConfig->>AuthConverter: Extraer token del header
+    AuthConverter->>AuthManager: Token JWT
+    AuthManager->>FirebaseAuth: verifyIdToken(token)
+    FirebaseAuth-->>AuthManager: DecodedToken (UID)
+    AuthManager-->>SecurityConfig: Authentication (UID como Principal)
+    SecurityConfig->>Controller: Request autenticado
+    Controller->>Service: Llamada al servicio
+    Service->>Repository: Operación de datos
+    Repository->>Firestore: Query/Update
+    Firestore-->>Repository: Resultado
+    Repository-->>Service: Datos
+    Service-->>Controller: Respuesta
+    Controller-->>Client: JSON Response
+```
+
+### Arquitectura en Capas
+
+```mermaid
+graph TD
+    subgraph Layer1["📡 Capa de Presentación"]
+        Controllers[Controllers<br/>REST Endpoints]
+    end
+
+    subgraph Layer2["🔒 Capa de Seguridad"]
+        Security[Spring Security<br/>+ Firebase JWT]
+    end
+
+    subgraph Layer3["⚙️ Capa de Lógica de Negocio"]
+        Services[Services<br/>Validaciones y Reglas]
+    end
+
+    subgraph Layer4["💾 Capa de Acceso a Datos"]
+        Repositories[Repositories<br/>Operaciones Firestore]
+    end
+
+    subgraph Layer5["🌍 Servicios Externos"]
+        Firebase[Firebase<br/>Auth + Firestore]
+        Supabase[Supabase<br/>Storage]
+        FastAPI[FastAPI<br/>GPU Processing]
+    end
+
+    Controllers --> Security
+    Security --> Services
+    Services --> Repositories
+    Repositories --> Firebase
+    Services --> Supabase
+    Services --> FastAPI
+
+    style Layer1 fill:#003366
+    style Layer2 fill:#8b0000
+    style Layer3 fill:#006400
+    style Layer4 fill:#8b4513
+    style Layer5 fill:#4b0082
+```
+
+### Flujos de Datos Principales
+
+```mermaid
+graph LR
+    subgraph CreatePost["📸 Crear Post"]
+        A1[POST /api/posts] --> A2[PostsController]
+        A2 --> A3[PostsService]
+        A3 --> A4[PostRepository]
+        A4 --> A5[SupabaseStorage<br/>Subir imagen]
+        A5 --> A6[Firestore<br/>Guardar metadata]
+    end
+
+    subgraph ProcessImage["🎨 Procesar Imagen"]
+        B1[POST /api/process/*] --> B2[ImageProcessingController]
+        B2 --> B3[ImageProcessingService]
+        B3 --> B4[FastAPI<br/>Procesar con GPU]
+        B4 --> B5[SupabaseStorage<br/>Guardar resultado]
+        B5 --> B6[Retornar URL]
+    end
+
+    subgraph Subscribe["👥 Suscribirse"]
+        C1[POST /api/users/{id}/subscribe] --> C2[SubscriptionController]
+        C2 --> C3[SubscriptionService]
+        C3 --> C4[SubscriptionRepository]
+        C4 --> C5[Firestore<br/>Users/{uid}/Following]
+        C4 --> C6[Firestore<br/>Users/{id}/Followers]
+    end
+
+    subgraph Like["❤️ Dar Like"]
+        D1[POST /api/posts/{id}/likes] --> D2[LikeController]
+        D2 --> D3[LikeService]
+        D3 --> D4[LikeRepository<br/>Toggle Like]
+        D4 --> D5[PostRepository<br/>Actualizar contador]
+        D5 --> D6[Firestore<br/>Incrementar likesCount]
+    end
+
+    style CreatePost fill:#1e3a5f
+    style ProcessImage fill:#5f3a1e
+    style Subscribe fill:#1e5f3a
+    style Like fill:#5f1e3a
+```
+
+### Estructura de Datos en Firestore
+
+```mermaid
+graph TD
+    subgraph Firestore["🗄️ Firestore Database"]
+        Users[Users Collection]
+        Posts[Posts Collection]
+        
+        Users --> UserDoc["{userId}<br/>usr_username<br/>usr_email<br/>usr_photoUrl<br/>usr_bio"]
+        UserDoc --> Following["Following Subcollection<br/>{followingId}"]
+        UserDoc --> Followers["Followers Subcollection<br/>{followerId}"]
+        
+        Posts --> PostDoc["{postId}<br/>pos_authorUid<br/>pos_imageUrl<br/>pos_caption<br/>pos_timestamp<br/>pos_likesCount<br/>pos_commentsCount"]
+        PostDoc --> Comments["Comments Subcollection<br/>{commentId}<br/>com_authorUid<br/>com_text<br/>com_timestamp"]
+        PostDoc --> Likes["Likes Subcollection<br/>{userId}<br/>Document ID = userId"]
+    end
+
+    style Users fill:#2d4a7c
+    style Posts fill:#2d7c4a
+    style Following fill:#7c2d2d
+    style Followers fill:#7c2d2d
+    style Comments fill:#7c5a2d
+    style Likes fill:#7c2d5a
+```
+
+---
+
 ## 🛠️ Tecnologías Clave
 
 *   **Framework:** Spring Boot 3.9
@@ -65,26 +325,67 @@ Coloca tu archivo `serviceAccountKey.json` en:
 
 ## 🔌 Endpoints de la API
 
-Todos los endpoints de procesamiento requieren un **Token Bearer de Firebase** válido en el header `Authorization`.
+**Importante:** Todos los endpoints (excepto `/api/auth/register` y `/api/auth/login`) requieren un **Token Bearer de Firebase** válido en el header `Authorization`.
 
 ### 🔐 Autenticación
 
-| Método | Endpoint | Descripción |
-| :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Registro de usuario (Email/Password) |
-| `POST` | `/api/auth/login` | Login de usuario (Devuelve Token) |
+| Método | Endpoint | Descripción | Body |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Registro de usuario (Email/Password) | `{"usr_username": "string", "usr_email": "string", "usr_password": "string", "usr_confirmPassword": "string", "usr_photoUrl": "string?", "usr_bio": "string?"}` |
+| `POST` | `/api/auth/login` | Login de usuario (Devuelve Token) | `{"email": "string", "password": "string"}` |
+
+### 📸 Posts
+
+| Método | Endpoint | Descripción | Body/Params |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/posts` | Crear publicación | `multipart/form-data`: `pos_image` (File), `pos_caption` (String) |
+| `GET` | `/api/posts/by-author/{authorUid}` | Obtener posts de un usuario | Path: `authorUid` |
+| `PUT` | `/api/posts/{postId}/description` | Actualizar descripción del post | `{"pos_caption": "string"}` |
+| `DELETE` | `/api/posts/{postId}` | Eliminar publicación | Path: `postId` |
+
+**Nota:** Solo el autor puede eliminar o actualizar sus propios posts.
+
+### 💬 Comentarios
+
+| Método | Endpoint | Descripción | Body |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/posts/{postId}/comments` | Crear comentario | `{"com_text": "string"}` |
+| `DELETE` | `/api/posts/{postId}/comments/{commentId}` | Eliminar comentario | Path: `postId`, `commentId` |
+
+**Nota:** Solo el autor puede eliminar sus propios comentarios.
+
+### ❤️ Likes
+
+| Método | Endpoint | Descripción | Params |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/posts/{postId}/likes` | Toggle Like/Unlike | Path: `postId` |
+
+**Nota:** Este endpoint funciona como toggle: si ya existe el like, lo elimina; si no existe, lo crea. El contador se actualiza automáticamente.
+
+### 👥 Suscripciones (Follow/Unfollow)
+
+| Método | Endpoint | Descripción | Params |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/users/{userId}/subscribe` | Suscribirse a un usuario | Path: `userId` |
+| `DELETE` | `/api/users/{userId}/subscribe` | Desuscribirse de un usuario | Path: `userId` |
+
+**Nota:** 
+- No puedes suscribirte a ti mismo
+- Las listas de following/followers se obtienen directamente desde Firestore en Flutter (programación reactiva)
+- Estructura en Firestore: `Users/{userId}/Following/{followingId}` y `Users/{userId}/Followers/{followerId}`
+
+### 👤 Perfil de Usuario
+
+| Método | Endpoint | Descripción | Body |
+| :--- | :--- | :--- | :--- |
+| `PATCH` | `/api/users/me/photo` | Actualizar foto de perfil | `multipart/form-data`: `photo` (File) |
+| `PATCH` | `/api/users/me/bio` | Actualizar biografía | `{"usr_bio": "string"}` (máx 500 caracteres) |
+
+**Nota:** Solo puedes actualizar tu propio perfil. El endpoint `/me` usa automáticamente el UID del token JWT.
 
 ### 🎨 Procesamiento de Imágenes
 
-Todos estos endpoints aceptan `multipart/form-data` con un archivo `file`. Devuelven un JSON con la URL de la imagen procesada.
-
-**Respuesta Exitosa (200 OK):**
-```json
-{
-    "userName": "Nombre del Usuario",
-    "imageUrl": "https://tu-proyecto.supabase.co/storage/v1/object/public/UPSGlam/uuid_imagen.png"
-}
-```
+Todos estos endpoints aceptan `multipart/form-data` con un archivo `file`. Devuelven la imagen procesada como PNG.
 
 | Filtro | Endpoint | Parámetros Opcionales (Form-Data) |
 | :--- | :--- | :--- |
@@ -95,6 +396,8 @@ Todos estos endpoints aceptan `multipart/form-data` con un archivo `file`. Devue
 | **Watermark** | `/api/process/watermark` | `scale`, `transparency`, `spacing` |
 | **Ripple** | `/api/process/ripple` | `edge_threshold`, `color_levels`, `saturation` |
 | **Collage** | `/api/process/collage` | *Ninguno* |
+
+**Nota:** Las imágenes procesadas pueden ser grandes. Se recomienda redimensionar en Flutter antes de enviar (máx 1920x1920px, calidad 85%).
 
 ---
 
@@ -168,6 +471,24 @@ docker logs -f upsglam-backend
 
 ---
 
+## 📊 Estructura de Datos en Firestore
+
+### Colecciones Principales
+
+- **`Users/{userId}`**: Perfiles de usuario
+  - Campos: `usr_username`, `usr_email`, `usr_photoUrl`, `usr_bio`
+  - Subcolecciones:
+    - `Following/{followingId}`: Usuarios que sigue
+    - `Followers/{followerId}`: Usuarios que le siguen
+
+- **`Posts/{postId}`**: Publicaciones
+  - Campos: `pos_authorUid`, `pos_imageUrl`, `pos_caption`, `pos_timestamp`, `pos_likesCount`, `pos_commentsCount`
+  - Subcolecciones:
+    - `Comments/{commentId}`: Comentarios del post
+    - `Likes/{userId}`: Likes del post (document ID = userId del que dio like)
+
+**Nota:** Las búsquedas de usuarios y listados de following/followers se realizan directamente desde Flutter usando streams reactivos de Firestore para mejor rendimiento.
+
 ## 🐛 Solución de Problemas Comunes
 
 1.  **Error 400/403 en Supabase (Invalid Compact JWS):**
@@ -176,3 +497,9 @@ docker logs -f upsglam-backend
     *   Tu bucket en Supabase debe ser **PÚBLICO**. Ve a Storage -> Buckets -> Edit Bucket -> Public: ON.
 3.  **Error 500 en Procesamiento:**
     *   Verifica que el servicio FastAPI esté corriendo en el puerto 8000.
+4.  **DataBufferLimitException (Exceeded limit on max bytes to buffer):**
+    *   El WebClient está configurado para manejar imágenes de hasta 100MB. Si persiste, redimensiona las imágenes en Flutter antes de enviar.
+5.  **Error 403 FORBIDDEN al eliminar post/comentario:**
+    *   Solo puedes eliminar tus propios posts/comentarios. Verifica que el token JWT corresponda al autor.
+6.  **Error 409 CONFLICT al suscribirse:**
+    *   Ya estás suscrito a ese usuario o intentas suscribirte a ti mismo.
