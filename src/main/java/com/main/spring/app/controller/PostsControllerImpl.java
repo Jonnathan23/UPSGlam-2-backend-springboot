@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +21,7 @@ import org.springframework.security.core.Authentication;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -71,5 +74,16 @@ public class PostsControllerImpl {
 
         // 2. DELEGAR al servicio: Pasamos el postId y el UID para validación
         return postService.deletePost(postId, authorUid);
+    }
+
+    @PutMapping("/{postId}/description")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<String> updateCaption(
+            @PathVariable String postId,
+            @RequestBody Map<String, String> body,
+            Authentication authentication) {
+        String authorUid = (String) authentication.getPrincipal();
+        String caption = body.get("pos_caption");
+        return postService.updateCaption(postId, caption, authorUid);
     }
 }

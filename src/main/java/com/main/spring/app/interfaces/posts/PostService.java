@@ -11,4 +11,5 @@ public interface PostService {
     Mono<String> createPost(FilePart filePart, String caption, String authorUid);
     Flux<PostsSchema> getPostsByAuthor(String authorUid);
     Mono<String> deletePost(String postId, String authorUid);
+    Mono<String> updateCaption(String postId, String caption, String authorUid);
 }

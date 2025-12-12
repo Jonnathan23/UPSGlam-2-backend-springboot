@@ -4,6 +4,7 @@ import org.springframework.core.io.buffer.DataBufferUtils;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.springframework.http.codec.multipart.FilePart;
 import com.google.cloud.firestore.QuerySnapshot;
@@ -215,6 +216,24 @@ public class PostRepositoryImpl implements PostRepository {
         }).onErrorMap(e -> {
             System.err.println("Error de Firestore al eliminar post: " + e.getMessage());
             return new RuntimeException("FIRESTORE_DELETE_POST_FAILED", e);
+        }).then();
+    }
+
+    @Override
+    public Mono<Void> updateCaption(String postId, String caption, List<String> mentionedUids) {
+        return Mono.fromCallable(() -> {
+            DocumentReference postRef = firestoreDb.collection("Posts")
+                    .document(Objects.requireNonNull(postId, "postId no puede ser null"));
+
+            Map<String, Object> update = new HashMap<>();
+            update.put("pos_caption", Objects.requireNonNull(caption, "caption no puede ser null"));
+            update.put("pos_mentionedUids", mentionedUids != null ? mentionedUids : Collections.emptyList());
+
+            postRef.update(update).get();
+            return null;
+        }).onErrorMap(e -> {
+            System.err.println("Error de Firestore al actualizar descripción: " + e.getMessage());
+            return new RuntimeException("FIRESTORE_UPDATE_CAPTION_FAILED", e);
         }).then();
     }
 
