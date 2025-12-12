@@ -222,35 +222,35 @@ graph TD
 ```mermaid
 graph LR
     subgraph CreatePost["📸 Crear Post"]
-        A1[POST /api/posts] --> A2[PostsController]
+        A1["POST /api/posts"] --> A2[PostsController]
         A2 --> A3[PostsService]
         A3 --> A4[PostRepository]
-        A4 --> A5[SupabaseStorage<br/>Subir imagen]
-        A5 --> A6[Firestore<br/>Guardar metadata]
+        A4 --> A5["SupabaseStorage<br/>Subir imagen"]
+        A5 --> A6["Firestore<br/>Guardar metadata"]
     end
 
     subgraph ProcessImage["🎨 Procesar Imagen"]
-        B1[POST /api/process/*] --> B2[ImageProcessingController]
+        B1["POST /api/process/*"] --> B2[ImageProcessingController]
         B2 --> B3[ImageProcessingService]
-        B3 --> B4[FastAPI<br/>Procesar con GPU]
-        B4 --> B5[SupabaseStorage<br/>Guardar resultado]
+        B3 --> B4["FastAPI<br/>Procesar con GPU"]
+        B4 --> B5["SupabaseStorage<br/>Guardar resultado"]
         B5 --> B6[Retornar URL]
     end
 
     subgraph Subscribe["👥 Suscribirse"]
-        C1[POST /api/users/{id}/subscribe] --> C2[SubscriptionController]
+        C1["POST /api/users/id/subscribe"] --> C2[SubscriptionController]
         C2 --> C3[SubscriptionService]
         C3 --> C4[SubscriptionRepository]
-        C4 --> C5[Firestore<br/>Users/{uid}/Following]
-        C4 --> C6[Firestore<br/>Users/{id}/Followers]
+        C4 --> C5["Firestore<br/>Users/uid/Following"]
+        C4 --> C6["Firestore<br/>Users/id/Followers"]
     end
 
     subgraph Like["❤️ Dar Like"]
-        D1[POST /api/posts/{id}/likes] --> D2[LikeController]
+        D1["POST /api/posts/id/likes"] --> D2[LikeController]
         D2 --> D3[LikeService]
-        D3 --> D4[LikeRepository<br/>Toggle Like]
-        D4 --> D5[PostRepository<br/>Actualizar contador]
-        D5 --> D6[Firestore<br/>Incrementar likesCount]
+        D3 --> D4["LikeRepository<br/>Toggle Like"]
+        D4 --> D5["PostRepository<br/>Actualizar contador"]
+        D5 --> D6["Firestore<br/>Incrementar likesCount"]
     end
 
     style CreatePost fill:#1e3a5f
