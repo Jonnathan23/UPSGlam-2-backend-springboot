@@ -339,7 +339,6 @@ Coloca tu archivo `serviceAccountKey.json` en:
 | Método | Endpoint | Descripción | Body/Params |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/posts` | Crear publicación | `multipart/form-data`: `pos_image` (File), `pos_caption` (String) |
-| `GET` | `/api/posts/by-author/{authorUid}` | Obtener posts de un usuario | Path: `authorUid` |
 | `PUT` | `/api/posts/{postId}/description` | Actualizar descripción del post | `{"pos_caption": "string"}` |
 | `DELETE` | `/api/posts/{postId}` | Eliminar publicación | Path: `postId` |
 
