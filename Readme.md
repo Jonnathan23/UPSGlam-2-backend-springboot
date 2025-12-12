@@ -4,6 +4,9 @@
 
 - [📝 Descripción del Proyecto](#-descripción-del-proyecto)
   - [🚀 Arquitectura del Sistema](#-arquitectura-del-sistema)
+- [📱 Aplicación Móvil](#-aplicación-móvil)
+  - [🔗 Repositorio de la App Móvil](#-repositorio-de-la-app-móvil)
+  - [🔌 Integración](#-integración)
 - [🏗️ Arquitectura del Backend](#️-arquitectura-del-backend)
   - [Diagrama de Arquitectura General](#diagrama-de-arquitectura-general)
   - [Flujo de Autenticación](#flujo-de-autenticación)
@@ -57,6 +60,28 @@ El sistema sigue una arquitectura de microservicios moderna:
     *   **Firestore:** Persistencia de datos de usuario.
 4.  **Supabase:**
     *   **Storage:** Almacenamiento de objetos para guardar las imágenes procesadas.
+
+---
+## 📱 Aplicación Móvil
+
+Este backend está diseñado para ser consumido por la **aplicación móvil UPSGlam** desarrollada en **Flutter**.
+
+### 🔗 Repositorio de la App Móvil
+
+*   **Repositorio:** [UPS-GLAM-movil-app](https://github.com/r-ART26/UPS-GLAM-movil-app)
+*   **Tecnología:** Flutter
+*   **Plataformas:** iOS y Android
+
+### 🔌 Integración
+
+La aplicación móvil se conecta a este backend mediante:
+
+*   **Autenticación:** Firebase Auth (tokens JWT compartidos)
+*   **API REST:** Endpoints documentados en la sección [Endpoints de la API](#-endpoints-de-la-api)
+*   **Almacenamiento:** Supabase Storage para imágenes
+*   **Base de Datos:** Firestore (acceso directo desde Flutter para streams reactivos)
+
+**Nota:** Para obtener los tokens JWT, la app móvil debe autenticarse primero mediante los endpoints `/api/auth/register` o `/api/auth/login`.
 
 ---
 
