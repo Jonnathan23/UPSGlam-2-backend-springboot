@@ -159,4 +159,38 @@ public class PostsServiceImpl implements PostService {
                             });
                 });
     }
+
+    @Override
+    public Mono<String> updateCaption(String postId, String caption, String authorUid) {
+        if (caption == null || caption.trim().isEmpty()) {
+            return Mono.error(new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "La descripción no puede estar vacía."));
+        }
+
+        return postRepository.getPostById(postId)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "El post no existe.")))
+                .flatMap(post -> {
+                    if (post == null) {
+                        return Mono.error(new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "El post no existe."));
+                    }
+                    if (!post.getPos_authorUid().equals(authorUid)) {
+                        return Mono.error(new ResponseStatusException(
+                                HttpStatus.FORBIDDEN, "No tienes permiso para editar este post."));
+                    }
+
+                    return extractAndValidateMentions(caption)
+                            .flatMap(mentioned -> postRepository.updateCaption(postId, caption.trim(), mentioned))
+                            .thenReturn("Descripción actualizada correctamente")
+                            .onErrorResume(e -> {
+                                if (e instanceof ResponseStatusException) {
+                                    return Mono.error(e);
+                                }
+                                System.err.println("ERROR: Fallo al actualizar la descripción. Causa: " + e.getMessage());
+                                return Mono.error(new ResponseStatusException(
+                                        HttpStatus.INTERNAL_SERVER_ERROR, "Error interno al actualizar la descripción."));
+                            });
+                });
+    }
 }

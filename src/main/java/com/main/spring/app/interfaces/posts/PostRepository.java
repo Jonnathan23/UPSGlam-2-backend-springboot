@@ -19,4 +19,6 @@ public interface PostRepository {
     Mono<PostsSchema> getPostById(String postId);
 
     Mono<Void> deletePost(String postId);
+
+    Mono<Void> updateCaption(String postId, String caption, java.util.List<String> mentionedUids);
 }
