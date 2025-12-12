@@ -1,5 +1,39 @@
 # 📸 UPSGlam 2.0 - Backend Reactivo con Spring WebFlux
 
+## 📑 Índice
+
+- [📝 Descripción del Proyecto](#-descripción-del-proyecto)
+  - [🚀 Arquitectura del Sistema](#-arquitectura-del-sistema)
+- [🏗️ Arquitectura del Backend](#️-arquitectura-del-backend)
+  - [Diagrama de Arquitectura General](#diagrama-de-arquitectura-general)
+  - [Flujo de Autenticación](#flujo-de-autenticación)
+  - [Arquitectura en Capas](#arquitectura-en-capas)
+  - [Flujos de Datos Principales](#flujos-de-datos-principales)
+  - [Estructura de Datos en Firestore](#estructura-de-datos-en-firestore)
+- [🛠️ Tecnologías Clave](#️-tecnologías-clave)
+- [⚙️ Configuración del Entorno](#️-configuración-del-entorno)
+  - [1. Requisitos Previos](#1-requisitos-previos)
+  - [2. Variables de Entorno](#2-variables-de-entorno-applicationproperties)
+  - [3. Credenciales de Firebase](#3-credenciales-de-firebase)
+- [🔌 Endpoints de la API](#-endpoints-de-la-api)
+  - [🔐 Autenticación](#-autenticación)
+  - [📸 Posts](#-posts)
+  - [💬 Comentarios](#-comentarios)
+  - [❤️ Likes](#️-likes)
+  - [👥 Suscripciones (Follow/Unfollow)](#-suscripciones-followunfollow)
+  - [👤 Perfil de Usuario](#-perfil-de-usuario)
+  - [🎨 Procesamiento de Imágenes](#-procesamiento-de-imágenes)
+- [🏃 Ejecución](#-ejecución)
+  - [Opción 1: Ejecución Local](#opción-1-ejecución-local)
+  - [Opción 2: Docker](#opción-2-docker)
+    - [Opción 2.1: Docker Compose (Recomendado - Incluye FastAPI)](#opción-21-docker-compose-recomendado---incluye-fastapi)
+    - [Opción 2.2: Docker CLI (Solo Spring Boot)](#opción-22-docker-cli-solo-spring-boot)
+    - [Opción 2.3: Publicar Imagen en Docker Hub](#opción-23-publicar-imagen-en-docker-hub)
+- [📊 Estructura de Datos en Firestore](#-estructura-de-datos-en-firestore)
+- [🐛 Solución de Problemas Comunes](#-solución-de-problemas-comunes)
+
+---
+
 ## 📝 Descripción del Proyecto
 
 Este repositorio contiene el **Backend Reactivo** de la plataforma social UPSGlam 2.0. Actúa como un **API Gateway** inteligente que orquesta la autenticación, el almacenamiento y el procesamiento de imágenes.
