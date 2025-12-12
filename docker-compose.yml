@@ -34,9 +34,7 @@ services:
 
   # Servicio Spring Boot - API Gateway
   upsglam-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: juanja/upsglam-backend:latest
     container_name: upsglam-backend
     ports:
       - "8080:8080"
@@ -45,6 +43,13 @@ services:
       - FASTAPI_URL=http://fastapi-service:8000
       # Java Options
       - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      # Montar application.properties con credenciales
+      # IMPORTANTE: Crea este archivo localmente con tus credenciales
+      - ./config/application.properties:/app/application.properties:ro
+      # Montar serviceAccountKey.json de Firebase
+      # IMPORTANTE: Coloca tu serviceAccountKey.json en ./config/envs/
+      - ./config/envs/serviceAccountKey.json:/app/envs/serviceAccountKey.json:ro
     depends_on:
       fastapi-service:
         condition: service_healthy

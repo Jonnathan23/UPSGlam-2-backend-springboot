@@ -8,8 +8,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import com.google.firebase.cloud.FirestoreClient;
 import java.io.IOException;
+import java.io.File;
 
 @Configuration
 public class FirebaseConfig {
@@ -17,7 +20,16 @@ public class FirebaseConfig {
     // 1. Bean para inicializar la aplicación de Firebase
     @Bean
     public FirebaseApp firebaseApp() throws IOException {
-        ClassPathResource resource = new ClassPathResource("envs/serviceAccountKey.json");
+        Resource resource;
+        
+        // Intentar primero desde el sistema de archivos (volumen montado en Docker)
+        File fileSystemPath = new File("/app/envs/serviceAccountKey.json");
+        if (fileSystemPath.exists() && fileSystemPath.isFile()) {
+            resource = new FileSystemResource(fileSystemPath);
+        } else {
+            // Fallback: buscar en el classpath (dentro del JAR)
+            resource = new ClassPathResource("envs/serviceAccountKey.json");
+        }
 
         // Construir opciones con las credenciales
         FirebaseOptions options = FirebaseOptions.builder()

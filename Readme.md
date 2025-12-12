@@ -415,59 +415,111 @@ Todos estos endpoints aceptan `multipart/form-data` con un archivo `file`. Devue
 
 **Requisitos:**
 - Docker con soporte NVIDIA GPU (para FastAPI)
-- La imagen de FastAPI se descarga automáticamente desde Docker Hub: `juanja/gpu-vision-kit:latest` de Microservicio FastAPI -> [VisionProcessingGPU-Kit](https://github.com/Juanja1306/VisionProcessingGPU-Kit) 
+- La imagen de FastAPI se descarga automáticamente desde Docker Hub: `juanja/gpu-vision-kit:latest` de Microservicio FastAPI -> [VisionProcessingGPU-Kit](https://github.com/Juanja1306/VisionProcessingGPU-Kit)
+- La imagen de Spring Boot se descarga desde Docker Hub: `juanja/upsglam-backend:latest`
 
-**Pasos:**
+**Preparación de Credenciales:**
 
-1. Construir la imagen de Spring Boot:
+Antes de ejecutar, crea la estructura de directorios y archivos de configuración:
+
 ```bash
-docker build -t upsglam-backend:latest .
+# Crear directorio de configuración
+mkdir -p config/envs
+
+# Copiar y editar application.properties con tus credenciales
+cp src/main/resources/application.template.properties config/application.properties
+# Edita config/application.properties con tus credenciales reales
+
+# Copiar serviceAccountKey.json de Firebase
+cp src/main/resources/envs/serviceAccountKey.json config/envs/serviceAccountKey.json
 ```
 
-2. Ejecutar ambos servicios con Docker Compose:
+**Estructura de directorios requerida:**
+```
+.
+├── config/
+│   ├── application.properties          # Con tus credenciales
+│   └── envs/
+│       └── serviceAccountKey.json      # Tu archivo de Firebase
+├── docker-compose.yml
+└── ...
+```
+
+**Ejecutar servicios:**
+
 ```bash
+# Actualizar la imagen en docker-compose.yml con tu usuario de Docker Hub
+# Luego ejecutar:
 docker-compose up
 ```
 
-**Nota:** La primera vez que ejecutes `docker-compose up`, Docker descargará automáticamente la imagen `juanja/gpu-vision-kit:latest` desde Docker Hub.
+**Nota:** La primera vez que ejecutes `docker-compose up`, Docker descargará automáticamente ambas imágenes desde Docker Hub.
 
-3. Ejecutar en segundo plano:
+**Comandos útiles:**
 ```bash
+# Ejecutar en segundo plano
 docker-compose up -d
-```
 
-4. Ver logs:
-```bash
+# Ver logs
 docker-compose logs -f
-```
 
-5. Detener servicios:
-```bash
+# Detener servicios
 docker-compose down
 ```
 
 #### Opción 2.2: Docker CLI (Solo Spring Boot)
 
-#### 1. Construir la imagen
+**Preparación:**
+
+1. Crea los archivos de configuración localmente:
 ```bash
-docker build -t upsglam-backend:latest .
+mkdir -p config/envs
+cp src/main/resources/application.template.properties config/application.properties
+# Edita config/application.properties con tus credenciales
+cp src/main/resources/envs/serviceAccountKey.json config/envs/serviceAccountKey.json
 ```
 
-#### 2. Ejecutar el contenedor
+2. Ejecutar el contenedor con volúmenes montados:
+```bash
+docker run --rm \
+  --name upsglam-backend \
+  -p 8080:8080 \
+  -v $(pwd)/config/application.properties:/app/application.properties:ro \
+  -v $(pwd)/config/envs/serviceAccountKey.json:/app/envs/serviceAccountKey.json:ro \
+  tu-usuario/upsglam-backend:latest
+```
+
+**En Windows PowerShell:**
 ```powershell
-# Simple - Todo está en la imagen (application.properties y serviceAccountKey.json)
 docker run --rm `
   --name upsglam-backend `
   -p 8080:8080 `
-  upsglam-backend:latest
+  -v ${PWD}/config/application.properties:/app/application.properties:ro `
+  -v ${PWD}/config/envs/serviceAccountKey.json:/app/envs/serviceAccountKey.json:ro `
+  tu-usuario/upsglam-backend:latest
 ```
 
-**Nota:** El `application.properties` y `serviceAccountKey.json` ya están incluidos en la imagen, así que no necesitas pasar variables de entorno ni montar volúmenes.
-
-#### 3. Ver logs
+**Ver logs:**
 ```bash
 docker logs -f upsglam-backend
 ```
+
+#### Opción 2.3: Publicar Imagen en Docker Hub
+
+**Construir y publicar la imagen (sin credenciales):**
+
+```bash
+# 1. Construir la imagen
+docker build -t tu-usuario/upsglam-backend:latest .
+
+# 2. Iniciar sesión en Docker Hub
+docker login
+
+# 3. Publicar la imagen
+docker push tu-usuario/upsglam-backend:latest
+```
+
+**Importante:** La imagen NO contiene credenciales. Debes montar `application.properties` y `serviceAccountKey.json` como volúmenes al ejecutar el contenedor.
 
 ---
 

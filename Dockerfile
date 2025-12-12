@@ -21,7 +21,7 @@ FROM eclipse-temurin:21-jre-alpine
 
 # Agregar metadatos
 LABEL maintainer="UPSGlam Team"
-LABEL description="UPSGlam 2.0 Backend - Spring Boot Application"
+LABEL description="UPSGlam 1.0 Backend - Spring Boot Application"
 
 # Crear usuario no-root para seguridad
 RUN addgroup -S spring && adduser -S spring -G spring
@@ -32,15 +32,11 @@ WORKDIR /app
 # Copiar el JAR desde el stage de build
 COPY --from=build /app/target/app-0.0.1-SNAPSHOT.jar app.jar
 
-# Copiar application.properties desde el build stage
-# Spring Boot lo buscará automáticamente en el directorio de trabajo
-COPY --from=build /app/src/main/resources/application.properties /app/application.properties
-
-# Nota: serviceAccountKey.json ya está dentro del JAR (en src/main/resources/envs/)
-# ClassPathResource lo encontrará automáticamente desde el classpath del JAR
-
-# Cambiar ownership al usuario spring
-RUN chown spring:spring app.jar /app/application.properties
+# Crear directorios para credenciales (se montarán como volúmenes)
+# NO copiamos application.properties ni serviceAccountKey.json aquí
+# Estos deben ser montados como volúmenes al ejecutar el contenedor
+RUN mkdir -p /app/envs && \
+    chown -R spring:spring /app
 
 # Cambiar al usuario no-root
 USER spring:spring
@@ -61,7 +57,8 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
 # Comando para ejecutar la aplicación
-# Spring Boot buscará application.properties automáticamente en el directorio actual
-# El serviceAccountKey.json está dentro del JAR y será encontrado por ClassPathResource
+# application.properties debe estar montado en /app/application.properties
+# serviceAccountKey.json debe estar montado en /app/envs/serviceAccountKey.json
+# Si no están montados, la aplicación fallará con un error claro
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.config.location=file:/app/application.properties"]
 

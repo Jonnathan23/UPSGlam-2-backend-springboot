@@ -40,3 +40,7 @@ GUIA_FASTAPI_A_SPRING.md
 POSTMAN_GUIDE.md
 
 application.properties
+
+# Configuración de Docker (contiene credenciales)
+serviceAccountKey.json
+application.properties 

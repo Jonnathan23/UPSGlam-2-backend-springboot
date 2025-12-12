@@ -24,11 +24,12 @@ GUIA_FASTAPI_A_SPRING.md
 POSTMAN_GUIDE.md
 
 # Archivos de configuración local (no deben estar en Docker)
-# Excluir application.properties de la raíz, pero NO el de src/main/resources/
+# IMPORTANTE: Excluir TODOS los archivos de credenciales para poder publicar la imagen
 application.properties
+src/main/resources/application.properties
+src/main/resources/envs/serviceAccountKey.json
 !application.template.properties
-# NO excluir src/main/resources/application.properties (se necesita en Docker)
-# NO excluir src/main/resources/envs/serviceAccountKey.json (se necesita en Docker)
+# Los archivos de credenciales deben montarse como volúmenes al ejecutar el contenedor
 
 # Archivos temporales
 *.log
